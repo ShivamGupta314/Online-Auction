@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  email    String   @unique
+  password String
+  role     Role     @default(BIDDER)
+  products Product[]
+  bids     Bid[]
+  packages UserPackage[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  photoUrl    String
+  minBidPrice Float
+  startTime   DateTime
+  endTime     DateTime
+  seller      User     @relation(fields: [sellerId], references: [id])
+  sellerId    Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  bids        Bid[]
+}
+
+model Bid {
+  id        Int      @id @default(autoincrement())
+  price     Float
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  bidder    User     @relation(fields: [bidderId], references: [id])
+  bidderId  Int
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+model Package {
+  id     Int            @id @default(autoincrement())
+  name   String
+  price  Float
+  users  UserPackage[]
+}
+
+model UserPackage {
+  id        Int     @id @default(autoincrement())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  package   Package @relation(fields: [packageId], references: [id])
+  packageId Int
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  BIDDER
+}
