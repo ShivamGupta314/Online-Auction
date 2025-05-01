@@ -2,32 +2,40 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
+  console.log('🌱 Starting DB seed...')
+
+  // ✅ Clear data in the right order
+  await prisma.userPackage.deleteMany()
+  await prisma.bid.deleteMany()
+  await prisma.product.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.category.deleteMany()
+  await prisma.package.deleteMany()
+
+  // ✅ Insert categories
   await prisma.category.createMany({
     data: [
       { name: 'Electronics' },
+      { name: 'Fashion' },
       { name: 'Books' },
-      { name: 'Furniture' },
       { name: 'Vehicles' }
-    ],
-    skipDuplicates: true
+    ]
   })
 
+  // ✅ Insert packages
   await prisma.package.createMany({
     data: [
-      { name: 'Basic', price: 10 },
-      { name: 'Pro', price: 30 },
-      { name: 'Unlimited', price: 50 }
-    ],
-    skipDuplicates: true
+      { name: 'Gold', price: 49.99 },
+      { name: 'Platinum', price: 99.99 }
+    ]
   })
 
-  console.log('✅ Seed complete')
+  console.log('✅ Seed complete.')
 }
 
 main()
-  .then(() => prisma.$disconnect())
-  .catch(e => {
+  .catch((e) => {
     console.error(e)
-    prisma.$disconnect()
     process.exit(1)
   })
+  .finally(() => prisma.$disconnect())

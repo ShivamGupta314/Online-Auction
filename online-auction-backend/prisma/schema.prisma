@@ -31,7 +31,9 @@ model Product {
   category    Category @relation(fields: [categoryId], references: [id])
   categoryId  Int
   bids        Bid[]
+  createdAt   DateTime @default(now()) // ✅ add this
 }
+
 
 model Bid {
   id        Int      @id @default(autoincrement())

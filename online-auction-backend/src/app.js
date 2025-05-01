@@ -8,6 +8,11 @@ import productRoutes from './routes/product.routes.js'
 
 // Middlewares
 import authMiddleware from './middleware/auth.middleware.js'
+import categoryRoutes from './routes/category.routes.js'
+import packageRoutes from './routes/package.routes.js'
+import userRoutes from './routes/user.routes.js'
+import bidRoutes from './routes/bid.routes.js'
+
 
 dotenv.config()
 
@@ -28,6 +33,16 @@ app.use('/api/auth', authRoutes)
 
 // 🔐 Protected routes (require JWT)
 app.use('/api/products', authMiddleware, productRoutes)
+
+app.use('/api/categories', categoryRoutes)
+
+app.use('/api/packages', packageRoutes)
+
+app.use('/api/users', userRoutes)
+
+app.use('/api/bids', bidRoutes)
+
+
 
 // Basic test route
 app.get('/', (_, res) => res.send('API is running'))
