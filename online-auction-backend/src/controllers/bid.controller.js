@@ -43,47 +43,53 @@ export const getBidsForProduct = async (req, res) => {
   
   
 
-export const placeBid = async (req, res) => {
-  const { productId, price } = req.body
-  const bidderId = req.user.id
-
-  try {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-      include: { bids: true }
-    })
-
-    if (!product) return res.status(404).json({ message: 'Product not found' })
-
-    const now = new Date()
-    if (now < product.startTime || now > product.endTime) {
-      return res.status(400).json({ message: 'Bidding not active for this product' })
-    }
-
-    const highestBid = await prisma.bid.findFirst({
-      where: { productId },
-      orderBy: { price: 'desc' }
-    })
-
-    const minPrice = highestBid ? highestBid.price : product.minBidPrice
-    if (price <= minPrice) {
-      return res.status(400).json({ message: `Bid must be greater than ${minPrice}` })
-    }
-
-    const bid = await prisma.bid.create({
-      data: {
-        productId,
-        price,
-        bidderId
+  export const placeBid = async (req, res) => {
+    const { productId, price } = req.body
+    const userId = req.user.id
+  
+    try {
+      const product = await prisma.product.findUnique({
+        where: { id: productId }
+      })
+  
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' })
       }
-    })
-
-    res.status(201).json(bid)
-  } catch (err) {
-    console.error('[POST] /api/bids', err)
-    res.status(500).json({ message: 'Failed to place bid' })
+  
+      // ⛔ Prevent seller from bidding on own product
+      if (product.sellerId === userId) {
+        return res.status(403).json({ message: 'Sellers cannot bid on their own products' })
+      }
+  
+      const now = new Date()
+      if (now < product.startTime || now > product.endTime) {
+        return res.status(400).json({ message: 'Bidding not active for this product' })
+      }
+  
+      const highestBid = await prisma.bid.findFirst({
+        where: { productId },
+        orderBy: { price: 'desc' }
+      })
+  
+      if (highestBid && price <= highestBid.price) {
+        return res.status(400).json({ message: 'Bid must be higher than current highest bid' })
+      }
+  
+      const bid = await prisma.bid.create({
+        data: {
+          price: parseFloat(price),
+          productId,
+          bidderId: userId
+        }
+      })
+  
+      res.status(201).json(bid)
+    } catch (err) {
+      console.error('[POST] /api/bids error:', err)
+      res.status(500).json({ message: 'Failed to place bid' })
+    }
   }
-}
+  
 
 export const getHighestBid = async (req, res) => {
     const productId = parseInt(req.params.id)
@@ -179,6 +185,27 @@ export const getHighestBid = async (req, res) => {
     } catch (err) {
       console.error('[GET] /api/products/:id/highlight-bid', err)
       res.status(500).json({ message: 'Failed to fetch public bid highlight' })
+    }
+  }
+  
+  export const getMyBids = async (req, res) => {
+    const userId = req.user.id
+  
+    try {
+      const bids = await prisma.bid.findMany({
+        where: { bidderId: userId },
+        include: {
+          product: {
+            select: { id: true, name: true, photoUrl: true, endTime: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+  
+      res.json(bids)
+    } catch (err) {
+      console.error('[GET] /api/bids/mine', err)
+      res.status(500).json({ message: 'Failed to fetch your bids' })
     }
   }
   

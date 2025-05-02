@@ -5,6 +5,8 @@ import { requireRole } from '../middleware/role.js'
 import { getHighestBid } from '../controllers/bid.controller.js'
 import { getBidSummary } from '../controllers/bid.controller.js'
 import { getPublicBidHighlight } from '../controllers/bid.controller.js'
+import { getMyBids } from '../controllers/bid.controller.js'
+
 
 
 const router = express.Router()
@@ -30,5 +32,8 @@ router.get('/product/:id/highest', getHighestBid)
 router.get('/product/:id/summary', getBidSummary)
 
 router.get('/product/:id/highlight-bid', getPublicBidHighlight)
+
+router.get('/mine', authMiddleware, requireRole(['BIDDER']), getMyBids)
+
 
 export default router
