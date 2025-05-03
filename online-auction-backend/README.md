@@ -37,15 +37,42 @@ Auction Backend Progress Summary
 ----------------------------
 📝 To-Do List (next steps):
 
-⬜ Prevent self-bidding (seller cannot bid)
-⬜ GET /api/bids/mine (bidder’s own bids)
-⬜ Lock bidding after product.endTime
-⬜ Filter products (search, category)
-⬜ Mock email on new bid (notify seller)
-⬜ Admin dashboard or stats (optional)
-⬜ Validation via Zod or Joi (optional)
-⬜ Add unit/integration tests
-⬜ Rate limiting / logging for security
+🧩 REMAINING BACKEND TASKS – ONLINE AUCTION APP
+
+🔒 Authentication & Access
+- [ ] Add rate limiting (e.g. express-rate-limit or Redis-based)
+- [ ] Add basic request logging middleware (like morgan or custom)
+
+📦 Product Features
+- [ ] Add product search + filtering API (by name, category, price)
+- [ ] Add soft-delete for products (optional)
+
+💸 Bidding System
+- [ ] Add test cases for POST /api/bids
+- [ ] Add test cases for GET /api/bids/mine with isWinning
+- [ ] Enforce auction expiry in real-time (server-side, not just UI)
+
+📊 Seller Dashboard
+- [ ] Add pagination or sorting options to dashboard response
+- [ ] Export summary to PDF (optional)
+
+🧪 Testing
+- [ ] Add tests for unauthorized bid attempts
+- [ ] Add tests for GET /api/bids/:productId/highest
+- [ ] Add tests for GET /api/bids/:productId/summary
+
+🛡️ Validation
+- [ ] Add global error handler (optional)
+- [ ] Add fallback 404/500 handlers
+- [ ] Improve Zod error formatting middleware (optional)
+
+📫 Notifications (Optional Stretch)
+- [ ] Add mock email notification on new highest bid
+- [ ] Queue bid notifications (BullMQ + Redis)
+
+🧑‍💻 Admin Panel (Optional)
+- [ ] Create basic admin dashboard (total users, products, revenue)
+
 
 Reminder: You are using:
 - PostgreSQL
