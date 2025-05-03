@@ -2,12 +2,17 @@ import express from 'express'
 import {
   uploadProduct,
   getMyProducts,
-  getAllProducts
+  getAllProducts,
+  getProductDetailWithBids,
+  updateProduct // ⬅️ add this
 } from '../controllers/product.controller.js'
 
+
+import { productUpdateSchema } from '../validators/product.validator.js'
 import authMiddleware from '../middleware/auth.middleware.js'
 import {requireRole} from '../middleware/role.js'
-import { getProductDetailWithBids } from '../controllers/product.controller.js'
+import { validate } from '../middleware/validate.js'
+import { productSchema } from '../validators/product.validator.js'
 
 
 const router = express.Router()
@@ -20,7 +25,23 @@ router.get('/', getAllProducts)
 
 router.get('/mine', authMiddleware, requireRole(['SELLER']), getMyProducts)
 
-router.post('/', authMiddleware, requireRole(['SELLER']), uploadProduct)
+router.post(
+  '/',
+  authMiddleware,
+  requireRole(['SELLER']),
+  validate(productSchema),
+  uploadProduct
+)
+
+router.put(
+  '/:id',
+  authMiddleware,
+  requireRole(['SELLER']),
+  validate(productUpdateSchema),
+  updateProduct
+)
+
+
 
 
 export default router

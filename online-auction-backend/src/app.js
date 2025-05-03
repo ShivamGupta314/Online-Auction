@@ -1,10 +1,15 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
+import { EventEmitter } from 'events'
+EventEmitter.defaultMaxListeners = 30
+
 
 // Routes
 import authRoutes from './routes/auth.routes.js'
 import productRoutes from './routes/product.routes.js'
+import sellerRoutes from './routes/seller.routes.js'
+
 
 // Middlewares
 import authMiddleware from './middleware/auth.middleware.js'
@@ -33,6 +38,8 @@ app.use('/api/auth', authRoutes)
 
 // 🔐 Protected routes (require JWT)
 app.use('/api/products', authMiddleware, productRoutes)
+
+app.use('/api/seller', sellerRoutes)
 
 app.use('/api/categories', categoryRoutes)
 

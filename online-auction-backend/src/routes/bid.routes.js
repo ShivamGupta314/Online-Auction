@@ -1,39 +1,48 @@
 import express from 'express'
-import { placeBid, getBidsForProduct } from '../controllers/bid.controller.js'
+import {
+  placeBid,
+  getMyBids,
+  getBidsForProduct,
+  getHighestBid,
+  getBidSummary,
+  getPublicBidHighlight
+} from '../controllers/bid.controller.js'
+
 import authMiddleware from '../middleware/auth.middleware.js'
 import { requireRole } from '../middleware/role.js'
-import { getHighestBid } from '../controllers/bid.controller.js'
-import { getBidSummary } from '../controllers/bid.controller.js'
-import { getPublicBidHighlight } from '../controllers/bid.controller.js'
-import { getMyBids } from '../controllers/bid.controller.js'
-
-
+import { validate } from '../middleware/validate.js'
+import { bidSchema } from '../validators/bid.validator.js'
 
 const router = express.Router()
 
+// 🔐 BIDDER-only: Place a new bid
+router.post(
+  '/',
+  authMiddleware,
+  requireRole(['BIDDER']),
+  validate(bidSchema),
+  placeBid
+)
 
-// Protect this route — SELLERs only
+// 🔐 BIDDER-only: View personal bids (with isWinning)
 router.get(
-    '/product/:id/summary',
-    authMiddleware,
-    requireRole(['SELLER']),
-    getBidSummary
-  )
+  '/mine',
+  authMiddleware,
+  requireRole(['BIDDER']),
+  getMyBids
+)
 
+// 🔐 SELLER-only: View bid summary for a product
+router.get(
+  '/product/:id/summary',
+  authMiddleware,
+  requireRole(['SELLER']),
+  getBidSummary
+)
 
-// 🔐 BIDDER-only
-router.post('/', authMiddleware, requireRole(['BIDDER']), placeBid)
-
-// 🔓 Public: View bids for product
+// 🔓 Public routes
 router.get('/product/:id', getBidsForProduct)
-
 router.get('/product/:id/highest', getHighestBid)
-
-router.get('/product/:id/summary', getBidSummary)
-
 router.get('/product/:id/highlight-bid', getPublicBidHighlight)
-
-router.get('/mine', authMiddleware, requireRole(['BIDDER']), getMyBids)
-
 
 export default router
