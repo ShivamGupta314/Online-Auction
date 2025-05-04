@@ -37,7 +37,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes)
 
 // 🔐 Protected routes (require JWT)
-app.use('/api/products', authMiddleware, productRoutes)
+app.use('/api/products', productRoutes)
 
 app.use('/api/seller', sellerRoutes)
 
