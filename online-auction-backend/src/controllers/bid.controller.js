@@ -1,6 +1,6 @@
 import { prisma } from '../prismaClient.js'
-import { isAuctionActive } from '../utils/auctionUtils.js'
-import { isAuctionExpired } from '../utils/auctionUtils.js'
+import { isAuctionActive, isAuctionExpired } from '../utils/auctionUtils.js'
+import notificationService from '../services/notification.service.js'
 
 
 
@@ -50,41 +50,59 @@ export const placeBid = async (req, res) => {
   const userId = req.user.id
   const { productId, price } = req.body
 
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: { seller: true, bids: true },
-  })
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { seller: true, bids: true },
+    })
 
-  if (!product) return res.status(404).json({ error: 'Product not found' })
+    if (!product) return res.status(404).json({ error: 'Product not found' })
 
-  if (!isAuctionActive(product)) {
-    return res.status(400).json({ error: 'Auction is not active' })
+    if (!isAuctionActive(product)) {
+      return res.status(400).json({ error: 'Auction is not active' })
+    }
+
+
+    if (product.sellerId === userId) {
+      return res.status(403).json({ error: 'You cannot bid on your own product' })
+    }
+
+    const highestBid = await prisma.bid.findFirst({
+      where: { productId },
+      orderBy: { price: 'desc' },
+      include: {
+        bidder: true
+      }
+    })
+
+    const minAllowedBid = highestBid ? highestBid.price + 1 : product.minBidPrice
+    if (price < minAllowedBid) {
+      return res.status(400).json({ error: `Bid must be at least ${minAllowedBid}` })
+    }
+
+    const bid = await prisma.bid.create({
+      data: {
+        price,
+        productId,
+        bidderId: userId,
+      },
+    })
+
+    // Notify seller of new bid
+    notificationService.notifySellerOfNewBid(bid)
+      .catch(err => console.error('Failed to notify seller of new bid:', err))
+
+    // Notify previous highest bidder if they've been outbid
+    if (highestBid && highestBid.bidderId !== userId) {
+      notificationService.notifyPreviousBidderOfOutbid(bid, highestBid.bidderId)
+        .catch(err => console.error('Failed to notify previous bidder:', err))
+    }
+
+    res.status(201).json(bid)
+  } catch (err) {
+    console.error('[POST] /api/bids', err)
+    res.status(500).json({ error: 'Failed to place bid' })
   }
-
-
-  if (product.sellerId === userId) {
-    return res.status(403).json({ error: 'You cannot bid on your own product' })
-  }
-
-  const highestBid = await prisma.bid.findFirst({
-    where: { productId },
-    orderBy: { price: 'desc' },
-  })
-
-  const minAllowedBid = highestBid ? highestBid.price + 1 : product.minBidPrice
-  if (price < minAllowedBid) {
-    return res.status(400).json({ error: `Bid must be at least ${minAllowedBid}` })
-  }
-
-  const bid = await prisma.bid.create({
-    data: {
-      price,
-      productId,
-      bidderId: userId,
-    },
-  })
-
-  res.status(201).json(bid)
 }
 
 
@@ -191,7 +209,7 @@ export const getMyBids = async (req, res) => {
   const userId = req.user.id
 
   try {
-    // 1. Get user’s bids
+    // 1. Get user's bids
     const userBids = await prisma.bid.findMany({
       where: { bidderId: userId },
       include: {

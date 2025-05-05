@@ -431,3 +431,41 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ error: 'Failed to update product' })
   }
 }
+
+export const deleteProduct = async (req, res) => {
+  const productId = parseInt(req.params.id);
+  const sellerId = req.user.id;
+
+  try {
+    // Check if product exists and belongs to this seller
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { bids: true }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (product.sellerId !== sellerId) {
+      return res.status(403).json({ error: 'You cannot delete this product' });
+    }
+
+    // Check if product has bids
+    if (product.bids.length > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete product with existing bids. Contact an administrator for assistance.'
+      });
+    }
+
+    // Delete the product
+    await prisma.product.delete({
+      where: { id: productId }
+    });
+
+    res.status(200).json({ message: 'Product deleted successfully' });
+  } catch (err) {
+    console.error('[DELETE] /api/products/:id', err);
+    res.status(500).json({ error: 'Failed to delete product' });
+  }
+}

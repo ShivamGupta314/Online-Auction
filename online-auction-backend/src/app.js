@@ -9,14 +9,18 @@ EventEmitter.defaultMaxListeners = 30
 import authRoutes from './routes/auth.routes.js'
 import productRoutes from './routes/product.routes.js'
 import sellerRoutes from './routes/seller.routes.js'
-
-
-// Middlewares
-import authMiddleware from './middleware/auth.middleware.js'
+import adminRoutes from './routes/admin.routes.js'
+import notificationRoutes from './routes/notification.routes.js'
 import categoryRoutes from './routes/category.routes.js'
 import packageRoutes from './routes/package.routes.js'
 import userRoutes from './routes/user.routes.js'
 import bidRoutes from './routes/bid.routes.js'
+import paymentRoutes from './routes/payment.routes.js'
+import webhookRoutes from './routes/webhook.routes.js'
+
+
+// Middlewares
+import authMiddleware from './middleware/auth.middleware.js'
 
 
 dotenv.config()
@@ -25,7 +29,15 @@ const app = express()
 
 // Enable CORS + JSON
 app.use(cors())
-app.use(express.json())
+
+// For regular API routes
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/webhooks/stripe') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 // 🔍 Debug: log every incoming request
 app.use((req, res, next) => {
@@ -35,6 +47,9 @@ app.use((req, res, next) => {
 
 // 🆓 Public routes
 app.use('/api/auth', authRoutes)
+
+// Webhook routes (need to be before JSON middleware for raw body)
+app.use('/api/webhooks', webhookRoutes)
 
 // 🔐 Protected routes (require JWT)
 app.use('/api/products', productRoutes)
@@ -49,6 +64,11 @@ app.use('/api/users', userRoutes)
 
 app.use('/api/bids', bidRoutes)
 
+app.use('/api/admin', adminRoutes)
+
+app.use('/api/notifications', notificationRoutes)
+
+app.use('/api/payments', paymentRoutes)
 
 
 // Basic test route

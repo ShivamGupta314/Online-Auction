@@ -8,32 +8,35 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  username String   @unique
-  email    String   @unique
-  password String
-  role     Role     @default(BIDDER)
-  products Product[]
-  bids     Bid[]
-  packages UserPackage[]
+  id             Int             @id @default(autoincrement())
+  username       String          @unique
+  email          String          @unique
+  password       String
+  role           Role            @default(BIDDER)
+  products       Product[]
+  bids           Bid[]
+  packages       UserPackage[]
+  paymentMethods PaymentMethod[]
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String
-  photoUrl    String
-  minBidPrice Float
-  startTime   DateTime
-  endTime     DateTime
-  seller      User     @relation(fields: [sellerId], references: [id])
-  sellerId    Int
-  category    Category @relation(fields: [categoryId], references: [id])
-  categoryId  Int
-  bids        Bid[]
-  createdAt   DateTime @default(now()) // ✅ add this
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String
+  photoUrl       String
+  minBidPrice    Float
+  startTime      DateTime
+  endTime        DateTime
+  seller         User     @relation(fields: [sellerId], references: [id])
+  sellerId       Int
+  category       Category @relation(fields: [categoryId], references: [id])
+  categoryId     Int
+  bids           Bid[]
+  createdAt      DateTime @default(now())
+  processed      Boolean  @default(false)
+  paymentReceived Boolean  @default(false)
+  auctionPayment AuctionPayment?
 }
-
 
 model Bid {
   id        Int      @id @default(autoincrement())
@@ -52,22 +55,127 @@ model Category {
 }
 
 model Package {
-  id     Int            @id @default(autoincrement())
-  name   String
-  price  Float
-  users  UserPackage[]
+  id           Int            @id @default(autoincrement())
+  name         String
+  description  String?
+  price        Float
+  duration     Int            @default(30) // Duration in days
+  listingLimit Int            @default(10)
+  features     String[]
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  users        UserPackage[]
 }
 
 model UserPackage {
-  id        Int     @id @default(autoincrement())
-  user      User    @relation(fields: [userId], references: [id])
-  userId    Int
-  package   Package @relation(fields: [packageId], references: [id])
-  packageId Int
+  id            Int       @id @default(autoincrement())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        Int
+  package       Package   @relation(fields: [packageId], references: [id])
+  packageId     Int
+  startDate     DateTime  @default(now())
+  endDate       DateTime
+  isActive      Boolean   @default(true)
+  transactionId String?   // Reference to payment transaction
+  listingsUsed  Int       @default(0)
+  payment       Payment?  @relation(fields: [paymentId], references: [id])
+  paymentId     Int?
+}
+
+model Payment {
+  id              Int             @id @default(autoincrement())
+  amount          Float
+  currency        String          @default("USD")
+  status          PaymentStatus
+  paymentMethod   PaymentMethod   @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId Int
+  stripePaymentId String?         // Stripe payment ID
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  transactions    Transaction[]
+  userPackages    UserPackage[]
+  auctionPayment  AuctionPayment?
+}
+
+model PaymentMethod {
+  id                 Int       @id @default(autoincrement())
+  type               String    // credit_card, paypal, etc.
+  user               User      @relation(fields: [userId], references: [id])
+  userId             Int
+  stripeCustomerId   String?   // Stripe customer ID
+  lastFourDigits     String?   // Last four digits of card
+  expiryMonth        Int?      // Credit card expiry month
+  expiryYear         Int?      // Credit card expiry year
+  isDefault          Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  payments           Payment[]
+}
+
+model Transaction {
+  id          Int            @id @default(autoincrement())
+  payment     Payment        @relation(fields: [paymentId], references: [id])
+  paymentId   Int
+  amount      Float
+  currency    String         @default("USD")
+  status      TransactionStatus
+  type        TransactionType
+  description String?
+  metadata    Json?          // Additional transaction data
+  reference   String?        // External reference (e.g. from payment provider)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model AuctionPayment {
+  id         Int      @id @default(autoincrement())
+  payment    Payment  @relation(fields: [paymentId], references: [id])
+  paymentId  Int      @unique
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int      @unique
+  buyerId    Int
+  sellerId   Int
+  bidId      Int
+  status     AuctionPaymentStatus @default(PENDING)
+  escrowHeld Boolean  @default(true)  // Indicates if payment is held in escrow
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum Role {
   ADMIN
   SELLER
   BIDDER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TransactionType {
+  PACKAGE_PURCHASE
+  AUCTION_PAYMENT
+  REFUND
+  ESCROW_RELEASE
+  PLATFORM_FEE
+}
+
+enum AuctionPaymentStatus {
+  PENDING
+  PAID
+  RELEASED_TO_SELLER
+  REFUNDED
+  DISPUTED
+  CANCELLED
 }

@@ -4,7 +4,8 @@ import {
   getMyProducts,
   getAllProducts,
   getProductDetailWithBids,
-  updateProduct // ⬅️ add this
+  updateProduct,
+  deleteProduct
 } from '../controllers/product.controller.js'
 
 
@@ -41,7 +42,11 @@ router.put(
   updateProduct
 )
 
-
-
+router.delete(
+  '/:id',
+  authMiddleware,
+  requireRole(['SELLER']),
+  deleteProduct
+)
 
 export default router
