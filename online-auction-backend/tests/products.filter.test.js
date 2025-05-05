@@ -1,112 +1,91 @@
 import request from 'supertest'
 import app from '../src/app.js'
 import { prisma } from '../src/prismaClient.js'
-import jwt from 'jsonwebtoken'
-import bcrypt from 'bcrypt'
+import { cleanTestDb } from './utils/cleanUpDb.js'
 
-let token
-let categoryId
-
-const createTestToken = (user) =>
-  jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1d' })
+let category, seller
 
 beforeAll(async () => {
-  await prisma.bid.deleteMany()
-  await prisma.product.deleteMany()
-  await prisma.userPackage.deleteMany()
-  await prisma.user.deleteMany()
+  await cleanTestDb()
 
-  const seller = await prisma.user.create({
+  category = await prisma.category.create({
+    data: { name: 'Electronics' }
+  })
+
+  seller = await prisma.user.create({
     data: {
-      email: 'filterseller@test.com',
-      username: 'filterseller',
-      password: await bcrypt.hash('filter123', 10),
-      role: 'SELLER'
-    }
+      username: 'filter_seller',
+      email: 'filter@example.com',
+      password: 'test123',
+      role: 'SELLER',
+    },
   })
 
-  token = `Bearer ${createTestToken({
-    id: seller.id,
-    email: seller.email,
-    role: seller.role
-  })}`
-
-  const category = await prisma.category.upsert({
-    where: { name: 'Electronics' },
-    update: {},
-    create: { name: 'Electronics' }
-  })
-
-  categoryId = category.id
-
-  const baseTime = new Date(Date.now() + 3600000) // 1hr from now
-  const laterTime = new Date(Date.now() + 86400000)
+  const now = new Date()
+  const later = new Date(now.getTime() + 1000 * 60 * 60)
 
   await prisma.product.createMany({
     data: [
       {
         name: 'MacBook Pro',
         description: 'Apple laptop',
-        photoUrl: 'https://example.com/mac.jpg',
-        minBidPrice: 1500,
-        startTime: baseTime,
-        endTime: laterTime,
-        categoryId,
-        sellerId: seller.id
+        photoUrl: 'url1',
+        minBidPrice: 999,
+        startTime: now,
+        endTime: later,
+        sellerId: seller.id,
+        categoryId: category.id,
       },
       {
-        name: 'iPhone',
+        name: 'iPhone 14',
         description: 'Apple phone',
-        photoUrl: 'https://example.com/iphone.jpg',
-        minBidPrice: 900,
-        startTime: baseTime,
-        endTime: laterTime,
-        categoryId,
-        sellerId: seller.id
+        photoUrl: 'url2',
+        minBidPrice: 899,
+        startTime: now,
+        endTime: later,
+        sellerId: seller.id,
+        categoryId: category.id,
       },
       {
-        name: 'Samsung TV',
-        description: 'Smart TV',
-        photoUrl: 'https://example.com/tv.jpg',
-        minBidPrice: 600,
-        startTime: baseTime,
-        endTime: laterTime,
-        categoryId,
-        sellerId: seller.id
-      }
-    ]
+        name: 'Dell Monitor',
+        description: 'Display device',
+        photoUrl: 'url3',
+        minBidPrice: 300,
+        startTime: now,
+        endTime: later,
+        sellerId: seller.id,
+        categoryId: category.id,
+      },
+    ],
   })
 })
 
-afterAll(async () => {
-  await prisma.bid.deleteMany()
-  await prisma.product.deleteMany()
-  await prisma.userPackage.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.$disconnect()
-})
+afterAll(() => prisma.$disconnect())
 
 describe('GET /api/products (filters)', () => {
   it('should return products matching search by name', async () => {
     const res = await request(app).get('/api/products?search=macbook')
     expect(res.statusCode).toBe(200)
-    expect(res.body.some(p => p.name.toLowerCase().includes('macbook'))).toBe(true)
+    expect(res.body.length).toBe(1)
+    expect(res.body[0].name.toLowerCase()).toContain('macbook')
   })
 
   it('should return products within price range', async () => {
     const res = await request(app).get('/api/products?min=800&max=1000')
     expect(res.statusCode).toBe(200)
-    expect(res.body.every(p => p.minBidPrice >= 800 && p.minBidPrice <= 1000)).toBe(true)
+    expect(res.body.length).toBe(2)
   })
 
   it('should return products by category ID', async () => {
-    const res = await request(app).get(`/api/products?category=${categoryId}`)
+    const res = await request(app).get(`/api/products?category=${category.id}`)
     expect(res.statusCode).toBe(200)
-    expect(res.body.length).toBeGreaterThan(0)
+    expect(res.body.length).toBeGreaterThanOrEqual(3)
   })
 
   it('should return correct results with all filters applied', async () => {
-    const res = await request(app).get(`/api/products?search=iphone&min=800&max=1000&category=${categoryId}`)
+    const res = await request(app).get(
+      `/api/products?search=iphone&min=800&max=1000&category=${category.id}`
+    )
     expect(res.statusCode).toBe(200)
     expect(res.body.length).toBe(1)
     expect(res.body[0].name.toLowerCase()).toContain('iphone')
