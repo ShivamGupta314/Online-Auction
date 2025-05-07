@@ -17,6 +17,7 @@ import userRoutes from './routes/user.routes.js'
 import bidRoutes from './routes/bid.routes.js'
 import paymentRoutes from './routes/payment.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
+import realtimeRoutes from './routes/realtime.routes.js'
 
 
 // Middlewares
@@ -69,6 +70,9 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/notifications', notificationRoutes)
 
 app.use('/api/payments', paymentRoutes)
+
+// 🔄 Real-time routes
+app.use('/api/realtime', realtimeRoutes)
 
 
 // Basic test route

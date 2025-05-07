@@ -1,6 +1,7 @@
 import { prisma } from '../prismaClient.js'
 import { isAuctionActive, isAuctionExpired } from '../utils/auctionUtils.js'
 import notificationService from '../services/notification.service.js'
+import socketService from '../utils/socketService.js'
 
 
 
@@ -80,6 +81,12 @@ export const placeBid = async (req, res) => {
       return res.status(400).json({ error: `Bid must be at least ${minAllowedBid}` })
     }
 
+    // Get bidder information for real-time updates
+    const bidder = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true }
+    })
+
     const bid = await prisma.bid.create({
       data: {
         price,
@@ -88,14 +95,61 @@ export const placeBid = async (req, res) => {
       },
     })
 
+    // Add bidder username to bid object for WebSocket events
+    const bidWithUsername = {
+      ...bid,
+      bidderUsername: bidder.username
+    }
+
+    // Emit real-time bid event via WebSocket
+    socketService.emitNewBid(productId, bidWithUsername, product)
+    
+    // If this is a winning bid (auction ending soon), send real-time notification
+    const timeRemaining = new Date(product.endTime) - new Date()
+    if (timeRemaining <= 60000) { // Last minute
+      socketService.sendUserNotification(
+        userId,
+        'BID_WINNING',
+        { 
+          message: `Your bid on ${product.name} is currently winning! Auction ends soon.`,
+          productId
+        }
+      )
+    }
+
     // Notify seller of new bid
     notificationService.notifySellerOfNewBid(bid)
       .catch(err => console.error('Failed to notify seller of new bid:', err))
+    
+    // Send real-time notification to seller
+    socketService.sendUserNotification(
+      product.sellerId,
+      'NEW_BID',
+      {
+        message: `New bid: ${bidder.username} placed a bid of $${price} on ${product.name}`,
+        productId,
+        bid: {
+          price,
+          bidderUsername: bidder.username
+        }
+      }
+    )
 
     // Notify previous highest bidder if they've been outbid
     if (highestBid && highestBid.bidderId !== userId) {
       notificationService.notifyPreviousBidderOfOutbid(bid, highestBid.bidderId)
         .catch(err => console.error('Failed to notify previous bidder:', err))
+      
+      // Send real-time notification to outbid user
+      socketService.sendUserNotification(
+        highestBid.bidderId,
+        'OUTBID',
+        {
+          message: `You've been outbid on ${product.name}. Current price: $${price}`,
+          productId,
+          currentPrice: price
+        }
+      )
     }
 
     res.status(201).json(bid)

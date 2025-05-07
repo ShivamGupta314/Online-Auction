@@ -1,5 +1,6 @@
 import { prisma } from '../prismaClient.js'
 import notificationService from './notification.service.js'
+import socketService from '../utils/socketService.js'
 
 /**
  * Process auctions that have recently ended
@@ -39,19 +40,52 @@ export const processEndedAuctions = async () => {
 
     // Process each ended auction
     for (const auction of endedAuctions) {
+      const winningBid = auction.bids.length > 0 ? auction.bids[0] : null;
+      
+      // Emit real-time auction ended event
+      socketService.emitAuctionEnded(auction.id, winningBid);
+      
       // Notify the auction winner if there are bids
-      if (auction.bids.length > 0) {
-        await notificationService.notifyAuctionWinner(auction.id)
+      if (winningBid) {
+        await notificationService.notifyAuctionWinner(auction.id);
+        
+        // Send real-time notification to winner
+        socketService.sendUserNotification(
+          winningBid.bidder.id,
+          'AUCTION_WON',
+          {
+            message: `Congratulations! You won the auction for ${auction.name} with a bid of $${winningBid.price}`,
+            productId: auction.id,
+            productName: auction.name,
+            bidAmount: winningBid.price
+          }
+        );
       }
 
       // Notify the seller about the auction end
-      await notificationService.notifySellerOfAuctionEnd(auction.id)
+      await notificationService.notifySellerOfAuctionEnd(auction.id);
+      
+      // Send real-time notification to seller
+      socketService.sendUserNotification(
+        auction.seller.id,
+        'AUCTION_ENDED',
+        {
+          message: `Your auction for ${auction.name} has ended${winningBid ? ` with a winning bid of $${winningBid.price}` : ' with no bids'}`,
+          productId: auction.id,
+          productName: auction.name,
+          hasBids: !!winningBid,
+          winningBid: winningBid ? {
+            amount: winningBid.price,
+            bidderUsername: winningBid.bidder.username
+          } : null
+        }
+      );
 
-      // Mark the auction as processed (optional - requires schema update)
-      // await prisma.product.update({
-      //   where: { id: auction.id },
-      //   data: { processed: true }
-      // })
+      // Update the product as processed
+      await prisma.product.update({
+        where: { id: auction.id },
+        data: { processed: true }
+      });
     }
 
     return {
@@ -99,7 +133,45 @@ export const getEndingSoonAuctions = async (hours = 24) => {
   }
 }
 
+/**
+ * Get time remaining for an auction and emit timer updates
+ * @param {number} productId - Product ID 
+ */
+export const emitAuctionTimerUpdates = async (productId) => {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    });
+    
+    if (!product) {
+      console.error(`Product not found: ${productId}`);
+      return;
+    }
+    
+    const now = new Date();
+    const endTime = new Date(product.endTime);
+    
+    if (endTime <= now) {
+      // Auction already ended
+      socketService.emitAuctionTimer(productId, 0);
+      return;
+    }
+    
+    // Calculate time remaining in seconds
+    const timeRemaining = Math.floor((endTime - now) / 1000);
+    
+    // Emit timer update
+    socketService.emitAuctionTimer(productId, timeRemaining);
+    
+    return timeRemaining;
+  } catch (error) {
+    console.error(`Error emitting auction timer for product ${productId}:`, error);
+    throw error;
+  }
+}
+
 export default {
   processEndedAuctions,
-  getEndingSoonAuctions
+  getEndingSoonAuctions,
+  emitAuctionTimerUpdates
 } 
