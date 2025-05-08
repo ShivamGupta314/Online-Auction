@@ -89,12 +89,10 @@ afterAll(async () => {
     // Delete test auction payment if it exists
     await prisma.auctionPayment.deleteMany({
       where: {
-        payment: {
-          OR: [
-            { userId: testBidder.id },
-            { userId: testSeller.id }
-          ]
-        }
+        OR: [
+          { buyerId: testBidder.id },
+          { sellerId: testSeller.id }
+        ]
       }
     });
 

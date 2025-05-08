@@ -5,6 +5,9 @@ import { createUserWithRole, createCategory, createProduct, createBid } from './
 import { getToken } from './utils/testToken.js'
 import { prisma } from '../src/prismaClient.js'
 
+// Check if we're in test mode with mocks
+const USE_TEST_MOCKS = process.env.NODE_ENV === 'test' && process.env.USE_TEST_MOCKS === 'true';
+
 let token, bidder
 
 beforeAll(async () => {
@@ -20,7 +23,12 @@ beforeAll(async () => {
   await createBid({ bidderId: bidder.id, productId: product.id, amount: 150 })
 })
 
-afterAll(() => prisma.$disconnect())
+afterAll(async () => {
+  // Only disconnect if not using mocks
+  if (!USE_TEST_MOCKS && typeof prisma.$disconnect === 'function') {
+    await prisma.$disconnect()
+  }
+})
 
 describe('GET /api/bids/mine', () => {
   it('should return the user bids array', async () => {

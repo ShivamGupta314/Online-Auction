@@ -137,19 +137,25 @@ describe('Payment API Tests', () => {
   
   // Test package payment processing
   describe('POST /api/payments/package', () => {
-    // This test requires an actual package in the database
     it('should process a package payment', async () => {
-      // First, get a package to purchase
-      // This assumes you have at least one package in your database
-      const packages = await prisma.package.findMany({ take: 1 });
+      // Check if we're in test mode with mocks
+      const USE_TEST_MOCKS = process.env.NODE_ENV === 'test' && process.env.USE_TEST_MOCKS === 'true';
       
-      // Skip test if no packages exist
-      if (packages.length === 0) {
-        console.log('Skipping package payment test - no packages available');
-        return;
+      let packageId = 1; // Default package ID for mock mode
+      
+      // Only query the database if not in mock mode
+      if (!USE_TEST_MOCKS) {
+        // First, get a package to purchase
+        const packages = await prisma.package.findMany({ take: 1 });
+        
+        // Skip test if no packages exist
+        if (packages.length === 0) {
+          console.log('Skipping package payment test - no packages available');
+          return;
+        }
+        
+        packageId = packages[0].id;
       }
-      
-      const packageId = packages[0].id;
       
       // Skip if no payment method was created
       if (!paymentMethodId) {
@@ -165,9 +171,16 @@ describe('Payment API Tests', () => {
           paymentMethodId
         });
       
-      // Note: This might fail in test environment without actual Stripe credentials
-      // Just check that the API route works correctly
-      expect(res.statusCode).toBeLessThan(500); // Not a server error
+      // Check status code
+      // In mock mode, we should get a successful response
+      if (USE_TEST_MOCKS) {
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.success).toBe(true);
+      } else {
+        // Note: This might fail in test environment without actual Stripe credentials
+        // Just check that the API route works correctly
+        expect(res.statusCode).toBeLessThan(500); // Not a server error
+      }
     });
   });
   

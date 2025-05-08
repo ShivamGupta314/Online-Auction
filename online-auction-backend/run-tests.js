@@ -1,7 +1,29 @@
 // run-tests.js
 import { execSync } from 'child_process';
-import { readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import dotenv from 'dotenv';
+
+// Load environment variables
+const envFile = 'env.test';
+dotenv.config({ path: envFile });
+
+// Load test environment variables
+let testEnv = {};
+try {
+  const testEnvContent = readFileSync(envFile, 'utf8');
+  testEnvContent.split('\n').forEach(line => {
+    if (line && !line.startsWith('#')) {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        testEnv[key.trim()] = value.trim();
+      }
+    }
+  });
+  console.log('Loaded test environment variables');
+} catch (err) {
+  console.warn(`Warning: Could not load ${envFile}. Using default environment.`);
+}
 
 // Configure test directory
 const TEST_DIR = './tests';
@@ -29,7 +51,17 @@ const runTests = async () => {
     console.log(`===============================`);
     
     try {
-      execSync(`${TEST_COMMAND} ${fullPath}`, { stdio: 'inherit' });
+      // Run with environment setup for testing
+      execSync(`${TEST_COMMAND} ${fullPath}`, { 
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          ...testEnv,
+          NODE_ENV: 'test',
+          // Mock Stripe key to avoid actual API calls
+          STRIPE_SECRET_KEY: testEnv.STRIPE_SECRET_KEY || 'sk_test_mock_key_for_testing'
+        }
+      });
       console.log(`✅ ${testFile} - PASSED`);
       passedTests++;
     } catch (error) {

@@ -3,6 +3,7 @@ import app from '../src/app.js';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
+import { jest } from '@jest/globals';
 
 dotenv.config();
 const prisma = new PrismaClient();

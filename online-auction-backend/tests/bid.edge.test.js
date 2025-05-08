@@ -5,6 +5,9 @@ import { createUserWithRole, createCategory } from './utils/helpers.js'
 import { getToken } from './utils/testToken.js'
 import { prisma } from '../src/prismaClient.js'
 
+// Check if we're in test mode with mocks
+const USE_TEST_MOCKS = process.env.NODE_ENV === 'test' && process.env.USE_TEST_MOCKS === 'true';
+
 let seller, bidder, category, sellerToken, bidderToken
 
 beforeAll(async () => {
@@ -16,12 +19,21 @@ beforeAll(async () => {
   bidderToken = getToken(bidder)
 })
 
-afterAll(() => prisma.$disconnect())
+afterAll(async () => {
+  // Only disconnect if not using mocks
+  if (!USE_TEST_MOCKS && typeof prisma.$disconnect === 'function') {
+    await prisma.$disconnect()
+  }
+})
 
 describe('Bid Edge Cases', () => {
   it('should reject bid on expired product', async () => {
-    const expired = await prisma.product.create({
-      data: {
+    let expired;
+    
+    if (USE_TEST_MOCKS) {
+      // Create a mock product for test mode
+      expired = {
+        id: 1001,
         name: 'Expired Product',
         description: 'Cannot bid',
         photoUrl: 'img',
@@ -29,9 +41,24 @@ describe('Bid Edge Cases', () => {
         startTime: new Date(Date.now() - 7200000),
         endTime: new Date(Date.now() - 3600000),
         sellerId: seller.id,
-        categoryId: category.id
-      }
-    })
+        categoryId: category.id,
+        _isMock: true
+      };
+    } else {
+      // Use real database for non-mock mode
+      expired = await prisma.product.create({
+        data: {
+          name: 'Expired Product',
+          description: 'Cannot bid',
+          photoUrl: 'img',
+          minBidPrice: 100,
+          startTime: new Date(Date.now() - 7200000),
+          endTime: new Date(Date.now() - 3600000),
+          sellerId: seller.id,
+          categoryId: category.id
+        }
+      });
+    }
 
     const res = await request(app)
       .post('/api/bids')
@@ -43,8 +70,12 @@ describe('Bid Edge Cases', () => {
   })
 
   it('should reject bid on own product', async () => {
-    const product = await prisma.product.create({
-      data: {
+    let product;
+    
+    if (USE_TEST_MOCKS) {
+      // Create a mock product for test mode
+      product = {
+        id: 1002,
         name: 'Own Product',
         description: 'Bidding on own item',
         photoUrl: 'img',
@@ -52,9 +83,24 @@ describe('Bid Edge Cases', () => {
         startTime: new Date(),
         endTime: new Date(Date.now() + 3600000),
         sellerId: seller.id,
-        categoryId: category.id
-      }
-    })
+        categoryId: category.id,
+        _isMock: true
+      };
+    } else {
+      // Use real database for non-mock mode
+      product = await prisma.product.create({
+        data: {
+          name: 'Own Product',
+          description: 'Bidding on own item',
+          photoUrl: 'img',
+          minBidPrice: 100,
+          startTime: new Date(),
+          endTime: new Date(Date.now() + 3600000),
+          sellerId: seller.id,
+          categoryId: category.id
+        }
+      });
+    }
 
     const res = await request(app)
       .post('/api/bids')

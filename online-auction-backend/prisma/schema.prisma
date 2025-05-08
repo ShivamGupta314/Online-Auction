@@ -17,6 +17,8 @@ model User {
   bids           Bid[]
   packages       UserPackage[]
   paymentMethods PaymentMethod[]
+
+  @@index([role])
 }
 
 model Product {
@@ -36,6 +38,12 @@ model Product {
   processed      Boolean  @default(false)
   paymentReceived Boolean  @default(false)
   auctionPayment AuctionPayment?
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([endTime])
+  @@index([startTime])
+  @@index([processed, paymentReceived])
 }
 
 model Bid {
@@ -46,6 +54,11 @@ model Bid {
   productId Int
   bidder    User     @relation(fields: [bidderId], references: [id])
   bidderId  Int
+
+  @@index([productId])
+  @@index([bidderId])
+  @@index([price])
+  @@index([createdAt])
 }
 
 model Category {
@@ -65,6 +78,8 @@ model Package {
   isActive     Boolean        @default(true)
   createdAt    DateTime       @default(now())
   users        UserPackage[]
+
+  @@index([isActive])
 }
 
 model UserPackage {
@@ -80,6 +95,12 @@ model UserPackage {
   listingsUsed  Int       @default(0)
   payment       Payment?  @relation(fields: [paymentId], references: [id])
   paymentId     Int?
+
+  @@index([userId])
+  @@index([packageId])
+  @@index([isActive])
+  @@index([endDate])
+  @@index([paymentId])
 }
 
 model Payment {
@@ -95,6 +116,11 @@ model Payment {
   transactions    Transaction[]
   userPackages    UserPackage[]
   auctionPayment  AuctionPayment?
+
+  @@index([paymentMethodId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([stripePaymentId])
 }
 
 model PaymentMethod {
@@ -110,6 +136,10 @@ model PaymentMethod {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   payments           Payment[]
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([isDefault])
 }
 
 model Transaction {
@@ -125,6 +155,12 @@ model Transaction {
   reference   String?        // External reference (e.g. from payment provider)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([reference])
 }
 
 model AuctionPayment {
@@ -140,6 +176,12 @@ model AuctionPayment {
   escrowHeld Boolean  @default(true)  // Indicates if payment is held in escrow
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([bidId])
+  @@index([status])
+  @@index([escrowHeld])
 }
 
 enum Role {

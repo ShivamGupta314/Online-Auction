@@ -1,213 +1,163 @@
-# Online Auction Platform Backend
+# Online Auction Backend
 
-A robust backend system for an online auction platform with bidding, notifications, user management, and admin features.
-
-## Table of Contents
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Setup](#environment-setup)
-- [API Documentation](#api-documentation)
-- [Testing](#testing)
-- [Project Structure](#project-structure)
+This is the backend service for the Online Auction platform, providing robust API endpoints for managing auctions, bids, payments, and user management.
 
 ## Features
 
-### User Management & Authentication
-- 🔐 JWT-based authentication system
-- 🔑 Role-based access control (ADMIN, SELLER, BIDDER)
-- 👤 User registration and login
-- 🧑‍💼 User profile management
+- User authentication and authorization
+- Product listing and management
+- Real-time bidding system
+- Payment processing with Stripe
+- Email notifications
+- Admin dashboard
+- Package subscriptions for sellers
+- Comprehensive test suite
 
-### Product Management
-- 📦 Create, read, update, and delete products
-- 🖼️ Product details with images
-- 📂 Category-based organization
-- 🔍 Validation for all product operations
-- ✅ Seller verification for product operations
+## Tech Stack
 
-### Bidding System
-- 💸 Place bids on active auctions
-- ⏱️ Time-based auction management
-- 📈 Bid history and tracking
-- 🔄 Automatic bid validation
-- 🏆 Automatic winner determination
-- 🔒 Prevention of self-bidding
+- Node.js
+- Express.js
+- PostgreSQL
+- Prisma ORM
+- JWT Authentication
+- Stripe Integration
+- Nodemailer
+- Jest for testing
 
-### Notification System
-- 📧 Email notifications for bidding activities
-- 🔔 Outbid alerts to previous highest bidders
-- 🎉 Auction win notifications
-- 📢 Seller notifications for bids and auction completion
-- 📱 Admin broadcast capabilities to user groups
-- 🗣️ Seller-bidder communication
-
-### Admin Dashboard
-- 📊 System-wide statistics
-- 👥 User management capabilities
-- 🛠️ Role modification for users
-- 📉 Monitoring of problematic products
-
-### Auction Management
-- ⏰ Scheduled processing of ended auctions
-- 📅 Daily reminders for auctions ending soon
-- 📌 Auction status tracking (active, ended, processed)
-
-### Tech Stack
-- 🛢️ PostgreSQL database with Prisma ORM
-- 🚀 Node.js with Express framework
-- 📦 ES modules for modern JavaScript
-- 🔒 JWT for secure authentication
-- ✅ Zod for validation
-- 📧 Nodemailer for email notifications
-- ⏱️ Node-cron for scheduled tasks
-
-## Getting Started
+## Setup and Installation
 
 ### Prerequisites
-- Node.js (v14 or later)
-- PostgreSQL (v12 or later)
-- npm (v6 or later)
+
+- Node.js v18 or higher
+- PostgreSQL 14 or higher
+- Stripe account (for payment processing)
+- SMTP server access (for email notifications)
 
 ### Installation
 
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/online-auction-backend.git
-cd online-auction-backend
-```
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd online-auction-backend
+   ```
 
-2. Install dependencies
-```bash
-npm install
-```
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-3. Set up the database
-```bash
-# Create PostgreSQL database named 'auctiondb'
-# Then run Prisma migrations
-npx prisma migrate dev
-```
+3. Set up environment variables:
+   ```
+   cp .env.example .env
+   ```
+   Edit the `.env` file and fill in the appropriate values.
 
-4. Seed the database with initial data
-```bash
-npx prisma db seed
-```
+4. Set up the database:
+   ```
+   npx prisma migrate dev
+   ```
 
-### Environment Setup
+5. Seed the database with initial data:
+   ```
+   npm run seed
+   ```
 
-Create a `.env` file in the root directory with the following variables:
+6. Start the development server:
+   ```
+   npm run dev
+   ```
 
-```
-# Server Configuration
-PORT=5001
-NODE_ENV=development
+## API Endpoints
 
-# Database Configuration
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/auctiondb?schema=public"
+The API provides the following main endpoint groups:
 
-# JWT Secret
-JWT_SECRET=your_jwt_secret_key_here
-JWT_EXPIRES_IN=7d
-
-# Frontend URL (for emails with links)
-FRONTEND_URL=http://localhost:3000
-
-# Email Configuration
-# For development, leave these empty to use Ethereal test account
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASS=
-EMAIL_FROM="Online Auction <noreply@example.com>"
-
-# Admin User (created during seed)
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=adminpassword
-```
-
-### Starting the Server
-
-Development mode with auto-reload:
-```bash
-npm run dev
-```
-
-Production mode:
-```bash
-npm start
-```
-
-## API Documentation
-
-Detailed documentation for each API endpoint is available in separate documentation files:
-
-- [API Reference Guide](./docs/api-reference.md) - Quick reference for all endpoints
-- [Authentication API](./docs/auth-api.md)
-- [Product API](./docs/product-api.md)
-- [Bidding API](./docs/bidding-api.md)
-- [Categories API](./docs/categories-api.md)
-- [Users API](./docs/users-api.md)
-- [Seller API](./docs/seller-api.md)
-- [Packages API](./docs/packages-api.md)
-- [Admin Dashboard](./docs/admin-dashboard.md)
-- [Notification System](./docs/notification-system.md)
-
-### API Testing Resources
-
-- [Postman Collection](./docs/postman-collection.json) - Ready-to-use API requests for testing
-- [Postman Guide](./docs/postman-guide.md) - Instructions for using the Postman collection
+- `/api/auth` - Authentication and user management
+- `/api/products` - Product listings and auction management
+- `/api/bids` - Bidding functionality
+- `/api/payments` - Payment processing and management
+- `/api/packages` - Seller subscription packages
+- `/api/categories` - Product categories
+- `/api/notifications` - User notifications
 
 ## Testing
 
-Run all tests:
-```bash
+### Running Tests
+
+To run the test suite:
+
+```
 npm test
 ```
 
-Run tests in sequential mode (to avoid concurrency issues):
-```bash
+For sequential tests:
+
+```
 npm run test-sequential
 ```
 
-Run specific test files:
-```bash
-npm test -- auth.test.js
+### Test Environment
+
+The test suite can run in two modes:
+
+1. **With database access**: Tests will interact with a test database.
+2. **With mocks**: Tests will use mock data without database access.
+
+To enable mock mode:
+
+```
+NODE_ENV=test USE_TEST_MOCKS=true npm test
+```
+
+## Environment Variables
+
+Key environment variables include:
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret for JWT token generation
+- `STRIPE_SECRET_KEY` - Stripe API key for payments
+- `EMAIL_HOST`, `EMAIL_USER`, `EMAIL_PASS` - SMTP configuration for emails
+- `FRONTEND_URL` - URL to the frontend application
+
+See `.env.example` for a complete list of environment variables.
+
+## Deployment
+
+### Production Build
+
+```
+npm run build
+```
+
+### Start Production Server
+
+```
+npm start
+```
+
+### Database Migrations
+
+```
+npx prisma migrate deploy
 ```
 
 ## Project Structure
 
-```
-src/
-├── controllers/      # Route handlers
-├── middleware/       # Express middleware
-├── routes/           # API routes
-├── services/         # Business logic
-├── utils/            # Utility functions
-├── validators/       # Request validation
-├── prismaClient.js   # Prisma client instance
-├── app.js            # Express app setup
-├── server.js         # Server entry point
-└── scheduler.js      # Scheduled tasks
+- `src/` - Source code
+  - `controllers/` - Request handlers
+  - `middleware/` - Express middleware
+  - `routes/` - API route definitions
+  - `services/` - Business logic
+  - `utils/` - Utility functions
+  - `prismaClient.js` - Prisma client instance
+- `prisma/` - Prisma schema and migrations
+- `tests/` - Test suite
+- `uploads/` - Storage for uploaded files
 
-prisma/
-├── schema.prisma     # Database schema
-└── migrations/       # Database migrations
+## Contributing
 
-tests/
-├── integration/      # API integration tests
-├── unit/             # Unit tests
-└── utils/            # Test utilities
-```
+Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## Future Enhancements
+## License
 
-- Rate limiting for API endpoints
-- Advanced product search and filtering
-- Enhanced auction analytics
-- Payment gateway integration
-- User preference settings
-- Mobile app push notifications
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
