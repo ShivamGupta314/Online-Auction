@@ -1,0 +1,39 @@
+
+JWT_SECRET="1212"
+TOKEN_EXPIRES_IN=1d
+PORT=5001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@example.com
+EMAIL_PASS=your-email-password
+
+# Database Connection
+DATABASE_URL="postgresql://postgres:admin123@localhost:5432/auctiondb?schema=public"
+
+# Logger Configuration
+LOG_LEVEL=debug
+
+# Rate Limiting (used in app.js)
+API_LIMITER_WINDOW_MS=900000
+API_LIMITER_MAX=100
+AUTH_LIMITER_WINDOW_MS=3600000
+AUTH_LIMITER_MAX=10
+
+
+# Health Check Configuration
+HEALTH_CHECK_PATH=/health
+DETAILED_HEALTH_CHECK_PATH=/health/detailed
+
+# Compression Options
+COMPRESSION_LEVEL=6
+
+# Graceful Shutdown
+SHUTDOWN_TIMEOUT=10000
+
+
+
