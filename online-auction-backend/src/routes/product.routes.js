@@ -5,7 +5,8 @@ import {
   getAllProducts,
   getProductDetailWithBids,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getProductStatistics
 } from '../controllers/product.controller.js'
 import auctionService from '../services/auction.service.js'
 import authMiddleware from '../middleware/auth.middleware.js'
@@ -20,6 +21,9 @@ router.get('/:id/detail', getProductDetailWithBids)
 
 // 🔓 Public: get all products
 router.get('/', getAllProducts)
+
+// 🔓 Public: get product statistics
+router.get('/statistics', getProductStatistics)
 
 router.get('/mine', authMiddleware, requireRole(['SELLER']), getMyProducts)
 

@@ -42,7 +42,11 @@ if (process.env.ENABLE_REDIS === 'true') {
 }
 
 // Enable CORS + JSON
-app.use(cors())
+app.use(cors({
+  origin: '*', // Allow all origins for testing
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 // Add security headers
 app.use(helmet())
 

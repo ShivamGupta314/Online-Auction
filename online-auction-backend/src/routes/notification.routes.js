@@ -2,7 +2,8 @@ import express from 'express'
 import {
   sendUserNotification,
   sendRoleBroadcast,
-  notifyProductBidders
+  notifyProductBidders,
+  subscribeToNewsletter
 } from '../controllers/notification.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
 import { requireRole } from '../middleware/role.js'
@@ -10,12 +11,19 @@ import { validate } from '../middleware/validate.js'
 import { 
   userNotificationSchema,
   roleBroadcastSchema,
-  productBiddersNotificationSchema 
+  productBiddersNotificationSchema,
+  newsletterSubscriptionSchema
 } from '../validators/notification.validator.js'
 
 const router = express.Router()
 
-// All routes require authentication
+// Public route for newsletter subscription
+router.post('/subscribe', 
+  validate(newsletterSubscriptionSchema), 
+  subscribeToNewsletter
+)
+
+// All routes below require authentication
 router.use(authMiddleware)
 
 // Admin-only routes

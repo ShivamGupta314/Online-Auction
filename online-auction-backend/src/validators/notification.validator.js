@@ -46,4 +46,11 @@ export const productBiddersNotificationSchema = z.object({
     required_error: 'Message is required'
   }).min(10, 'Message must be at least 10 characters long')
     .max(2000, 'Message cannot exceed 2000 characters')
+})
+
+// Validation schema for newsletter subscription
+export const newsletterSubscriptionSchema = z.object({
+  email: z.string({
+    required_error: 'Email is required'
+  }).email('Please provide a valid email address')
 }) 

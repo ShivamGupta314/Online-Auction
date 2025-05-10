@@ -47,7 +47,7 @@ export const getMyProducts = async (req, res) => {
 // Public: Get all products with filters + auction status
 export const getAllProducts = async (req, res) => {
   try {
-    const { search, category, min, max } = req.query
+    const { search, category, min, max, status } = req.query
 
     const filters = {}
 
@@ -65,6 +65,20 @@ export const getAllProducts = async (req, res) => {
       if (max) filters.minBidPrice.lte = parseFloat(max)
     }
 
+    // Handle status filter
+    const now = new Date()
+    if (status === 'active') {
+      // Active auctions: started but not ended
+      filters.startTime = { lte: now }
+      filters.endTime = { gt: now }
+    } else if (status === 'upcoming') {
+      // Upcoming auctions: not started yet
+      filters.startTime = { gt: now }
+    } else if (status === 'ended') {
+      // Ended auctions: end time in the past
+      filters.endTime = { lt: now }
+    }
+
     const products = await prisma.product.findMany({
       where: filters,
       include: {
@@ -77,7 +91,18 @@ export const getAllProducts = async (req, res) => {
             role: true
           }
         },
-        bids: true
+        bids: {
+          include: {
+            bidder: {
+              select: {
+                username: true
+              }
+            }
+          },
+          orderBy: {
+            price: 'desc'
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -468,4 +493,77 @@ export const deleteProduct = async (req, res) => {
     console.error('[DELETE] /api/products/:id', err);
     res.status(500).json({ error: 'Failed to delete product' });
   }
+}
+
+/**
+ * Get product statistics for the landing page
+ */
+export const getProductStatistics = async (req, res) => {
+  try {
+    // Get total number of users (customers)
+    const totalCustomers = await prisma.user.count({
+      where: {
+        role: 'BIDDER'
+      }
+    })
+
+    // Get completed auctions
+    const completedAuctions = await prisma.product.findMany({
+      where: {
+        endTime: {
+          lt: new Date()
+        },
+        bids: {
+          some: {}
+        }
+      },
+      include: {
+        bids: {
+          orderBy: {
+            price: 'desc'
+          },
+          take: 1
+        }
+      }
+    })
+
+    // Calculate average discount and total savings
+    let totalSavings = 0
+    let totalDiscountPercentage = 0
+
+    completedAuctions.forEach(auction => {
+      if (auction.bids.length > 0) {
+        const finalPrice = auction.bids[0].price
+        const mrp = auction.minBidPrice
+        const savings = mrp - finalPrice
+        const discountPercentage = (savings / mrp) * 100
+
+        totalSavings += savings
+        totalDiscountPercentage += discountPercentage
+      }
+    })
+
+    const averageDiscount = completedAuctions.length > 0
+      ? Math.round(totalDiscountPercentage / completedAuctions.length)
+      : 85 // Default if no completed auctions
+
+    res.json({
+      averageDiscount,
+      totalCustomers: totalCustomers || 10000, // Default if no customers
+      totalSavings: Math.round(totalSavings) || 50000000 // Default if no savings
+    })
+  } catch (error) {
+    console.error('Error fetching product statistics:', error)
+    res.status(500).json({ error: 'Failed to fetch product statistics' })
+  }
+}
+
+export default {
+  uploadProduct,
+  getMyProducts,
+  getAllProducts,
+  getProductDetailWithBids,
+  updateProduct,
+  deleteProduct,
+  getProductStatistics
 }

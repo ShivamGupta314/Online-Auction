@@ -2,6 +2,7 @@ import app from './src/app.js'
 import dotenv from 'dotenv'
 import logger from './src/utils/logger.js'
 import { prisma } from './src/prismaClient.js'
+import { initializeSocketIO } from './src/utils/socketService.js'
 dotenv.config()
 
 const PORT = process.env.PORT || 5000
@@ -10,6 +11,10 @@ const PORT = process.env.PORT || 5000
 const server = app.listen(PORT, () => {
   logger.info(`🚀 Server running at http://localhost:${PORT}`)
 })
+
+// Initialize Socket.IO
+initializeSocketIO(server);
+logger.info('Socket.IO server initialized');
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {

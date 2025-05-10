@@ -167,8 +167,55 @@ export const notifyProductBidders = async (req, res) => {
   }
 }
 
+/**
+ * Subscribe to newsletter
+ */
+export const subscribeToNewsletter = async (req, res) => {
+  const { email } = req.body
+
+  try {
+    // Check if email already exists
+    const existingSubscription = await prisma.newsletterSubscription.findUnique({
+      where: { email }
+    })
+
+    if (existingSubscription) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Email already subscribed to newsletter' 
+      })
+    }
+
+    // Create new subscription
+    await prisma.newsletterSubscription.create({
+      data: { email }
+    })
+
+    // Send confirmation email
+    await emailService.sendEmail({
+      to: email,
+      subject: 'Welcome to Online Auction Newsletter!',
+      text: 'Thank you for subscribing to our newsletter. You will now receive updates about new auctions and special offers.',
+      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4a6ee0;">Welcome to Online Auction Newsletter!</h2>
+        <p>Thank you for subscribing to our newsletter. You will now receive updates about new auctions and special offers.</p>
+        <p>Regards,<br>Online Auction Team</p>
+      </div>`
+    })
+
+    res.status(201).json({
+      success: true,
+      message: 'Successfully subscribed to newsletter'
+    })
+  } catch (error) {
+    console.error('Failed to subscribe to newsletter:', error)
+    res.status(500).json({ error: 'Failed to subscribe to newsletter' })
+  }
+}
+
 export default {
   sendUserNotification,
   sendRoleBroadcast,
-  notifyProductBidders
+  notifyProductBidders,
+  subscribeToNewsletter
 } 
