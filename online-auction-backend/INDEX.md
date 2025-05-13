@@ -15,6 +15,7 @@ This is a backend system for an online auction platform built with Node.js, Expr
 - `tests/` - Test files and configurations
 - `scripts/` - Utility scripts
 - `logs/` - Application logs
+- `DATABASE_INDEXES.md` - Documentation of database indexing strategy
 
 ### Source Code (`src/`)
 - `app.js` - Express application setup and middleware configuration
@@ -38,6 +39,7 @@ This is a backend system for an online auction platform built with Node.js, Expr
 - `README.md` - Project setup and usage instructions
 - `IMPROVEMENTS.md` - Planned improvements
 - `PRODUCTION_IMPROVEMENTS.md` - Production-specific improvements
+- `DATABASE_INDEXES.md` - Comprehensive database indexing documentation
 
 ## Key Features
 1. User Authentication and Authorization
@@ -47,6 +49,10 @@ This is a backend system for an online auction platform built with Node.js, Expr
 5. Background Job Processing
 6. API Documentation
 7. Testing Infrastructure
+8. Database Performance Optimization
+
+## Database Performance
+The database schema includes comprehensive indexing for optimal query performance. See `DATABASE_INDEXES.md` for detailed information about the indexing strategy.
 
 ## Development Tools
 - Node.js/Express for the backend

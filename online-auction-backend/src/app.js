@@ -7,8 +7,14 @@ import compression from 'compression'
 import { EventEmitter } from 'events'
 import logger from './utils/logger.js'
 import cacheService from './utils/cacheService.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 EventEmitter.defaultMaxListeners = 30
 
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
 
 // Routes
 import authRoutes from './routes/auth.routes.js'
@@ -52,6 +58,10 @@ app.use(helmet())
 
 // Add compression
 app.use(compression())
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(rootDir, 'uploads')));
+logger.info(`Static files from ${path.join(rootDir, 'uploads')} will be served at /uploads`);
 
 // Rate limiting
 const apiLimiter = rateLimit({

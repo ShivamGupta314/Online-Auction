@@ -12,6 +12,7 @@ This is the backend service for the Online Auction platform, providing robust AP
 - Admin dashboard
 - Package subscriptions for sellers
 - Comprehensive test suite
+- Optimized database performance with strategic indexing
 
 ## Tech Stack
 
@@ -78,6 +79,17 @@ The API provides the following main endpoint groups:
 - `/api/packages` - Seller subscription packages
 - `/api/categories` - Product categories
 - `/api/notifications` - User notifications
+
+## Database Performance
+
+The application uses strategic database indexing to optimize query performance. This includes:
+
+- Single-column indexes for frequent filtering operations
+- Composite indexes for complex queries
+- Specialized indexes for search operations
+- Optimized indexes for time-based auction operations
+
+For a comprehensive guide to our indexing strategy, see [DATABASE_INDEXES.md](DATABASE_INDEXES.md).
 
 ## Testing
 
@@ -152,6 +164,7 @@ npx prisma migrate deploy
 - `prisma/` - Prisma schema and migrations
 - `tests/` - Test suite
 - `uploads/` - Storage for uploaded files
+- `DATABASE_INDEXES.md` - Documentation of database indexing strategy
 
 ## Contributing
 

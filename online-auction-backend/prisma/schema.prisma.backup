@@ -19,8 +19,6 @@ model User {
   packages       UserPackage[]
 
   @@index([role])
-  @@index([email])
-  @@index([username])
 }
 
 model Product {
@@ -46,9 +44,6 @@ model Product {
   @@index([endTime])
   @@index([startTime])
   @@index([processed, paymentReceived])
-  @@index([createdAt])
-  @@index([minBidPrice])
-  @@index([name])
 }
 
 model Bid {
@@ -64,16 +59,12 @@ model Bid {
   @@index([bidderId])
   @@index([price])
   @@index([createdAt])
-  @@index([productId, createdAt])
-  @@index([productId, price])
 }
 
 model Category {
   id       Int       @id @default(autoincrement())
   name     String    @unique
   products Product[]
-
-  @@index([name])
 }
 
 model Package {
@@ -89,8 +80,6 @@ model Package {
   users        UserPackage[]
 
   @@index([isActive])
-  @@index([name])
-  @@index([price])
 }
 
 model UserPackage {
@@ -112,8 +101,6 @@ model UserPackage {
   @@index([isActive])
   @@index([endDate])
   @@index([paymentId])
-  @@index([startDate, endDate])
-  @@index([userId, isActive])
 }
 
 model Payment {
@@ -134,7 +121,6 @@ model Payment {
   @@index([status])
   @@index([createdAt])
   @@index([stripePaymentId])
-  @@index([status, createdAt])
 }
 
 model PaymentMethod {
@@ -154,8 +140,6 @@ model PaymentMethod {
   @@index([userId])
   @@index([stripeCustomerId])
   @@index([isDefault])
-  @@index([userId, isDefault])
-  @@index([userId, type])
 }
 
 model Transaction {
@@ -177,8 +161,6 @@ model Transaction {
   @@index([type])
   @@index([createdAt])
   @@index([reference])
-  @@index([paymentId, status])
-  @@index([type, status])
 }
 
 model AuctionPayment {
@@ -200,8 +182,6 @@ model AuctionPayment {
   @@index([bidId])
   @@index([status])
   @@index([escrowHeld])
-  @@index([buyerId, status])
-  @@index([sellerId, status])
 }
 
 model NewsletterSubscription {
@@ -212,7 +192,6 @@ model NewsletterSubscription {
 
   @@index([email])
   @@index([active])
-  @@index([email, active])
 }
 
 enum Role {
