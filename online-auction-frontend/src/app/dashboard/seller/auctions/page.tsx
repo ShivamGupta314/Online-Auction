@@ -14,6 +14,7 @@ import {
   Search
 } from 'lucide-react';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
+import { getImageUrl } from '@/lib/imageUtils';
 
 export default function SellerAuctionsPage() {
   const router = useRouter();
@@ -170,7 +171,7 @@ export default function SellerAuctionsPage() {
                     <div className="flex space-x-4">
                       <div className="relative w-24 h-24 rounded-lg overflow-hidden">
                         <img
-                          src={auction.image}
+                          src={getImageUrl(auction.image)}
                           alt={auction.title}
                           className="object-cover w-full h-full"
                         />

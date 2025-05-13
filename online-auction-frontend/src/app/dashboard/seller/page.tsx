@@ -21,6 +21,7 @@ import { authService } from '@/services/auth';
 import { toast } from 'sonner';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import { useEffect } from 'react';
+import { getImageUrl } from '@/lib/imageUtils';
 
 export default function SellerDashboardPage() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function SellerDashboardPage() {
       startingBid: '$200',
       currentBid: '$350',
       timeLeft: '2d 4h',
-      image: 'https://images.unsplash.com/photo-1549187774-b4e9b0445b41?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      image: getImageUrl('https://images.unsplash.com/photo-1549187774-b4e9b0445b41?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'),
       category: 'Furniture',
       bids: 8,
       status: 'active'
@@ -91,7 +92,7 @@ export default function SellerDashboardPage() {
       startingBid: '$150',
       currentBid: '$275',
       timeLeft: '1d 6h',
-      image: 'https://images.unsplash.com/photo-1452780212940-6f5c0d14d848?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      image: getImageUrl('https://images.unsplash.com/photo-1452780212940-6f5c0d14d848?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'),
       category: 'Electronics',
       bids: 5,
       status: 'active'
@@ -102,7 +103,7 @@ export default function SellerDashboardPage() {
       startingBid: '$50',
       currentBid: '$85',
       timeLeft: '8h 15m',
-      image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      image: getImageUrl('https://images.unsplash.com/photo-1627123424574-724758594e93?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'),
       category: 'Accessories',
       bids: 7,
       status: 'active'

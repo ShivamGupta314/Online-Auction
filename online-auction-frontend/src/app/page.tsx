@@ -12,6 +12,7 @@ import { apiService, Auction } from '@/services/api';
 import { toast } from 'sonner';
 import socketService from '@/services/socketService';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
+import { getImageUrl } from '@/lib/imageUtils';
 
 // Performance optimized animation variants
 const fadeIn = {
@@ -156,7 +157,7 @@ const HomePage = () => {
       id: auction.id,
       name: auction.name,
       mrp: auction.minBidPrice,
-      image: auction.photoUrl || 'https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+      image: getImageUrl(auction.photoUrl),
       currentBid: auction.highestBid || auction.minBidPrice,
       timeLeft: auction.timeLeftFormatted || '2h 15m',
       endTime: auction.endTime,
@@ -188,7 +189,7 @@ const HomePage = () => {
         id: auction.id,
         name: auction.name,
         mrp: auction.minBidPrice,
-        image: auction.photoUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=2126&auto=format&fit=crop&ixlib=rb-4.0.3',
+        image: getImageUrl(auction.photoUrl),
         opensIn: '2 days'
       }))
     : [
@@ -215,7 +216,7 @@ const HomePage = () => {
           id: auction.id,
           name: auction.name,
           mrp: auction.minBidPrice,
-          image: auction.photoUrl || 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3',
+          image: getImageUrl(auction.photoUrl),
           winner,
           endedAt: highestBid
         };

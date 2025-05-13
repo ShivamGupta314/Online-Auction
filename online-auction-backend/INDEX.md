@@ -16,6 +16,7 @@ This is a backend system for an online auction platform built with Node.js, Expr
 - `scripts/` - Utility scripts
 - `logs/` - Application logs
 - `DATABASE_INDEXES.md` - Documentation of database indexing strategy
+- `uploads/` - Uploaded files, including product images
 
 ### Source Code (`src/`)
 - `app.js` - Express application setup and middleware configuration
@@ -40,6 +41,7 @@ This is a backend system for an online auction platform built with Node.js, Expr
 - `IMPROVEMENTS.md` - Planned improvements
 - `PRODUCTION_IMPROVEMENTS.md` - Production-specific improvements
 - `DATABASE_INDEXES.md` - Comprehensive database indexing documentation
+- `docs/IMAGE_HANDLING.md` - Documentation for product image handling
 
 ## Key Features
 1. User Authentication and Authorization
@@ -50,9 +52,13 @@ This is a backend system for an online auction platform built with Node.js, Expr
 6. API Documentation
 7. Testing Infrastructure
 8. Database Performance Optimization
+9. Product Image Management
 
 ## Database Performance
 The database schema includes comprehensive indexing for optimal query performance. See `DATABASE_INDEXES.md` for detailed information about the indexing strategy.
+
+## Product Images
+Product images are stored in the `uploads/images/products` directory and served as static files. The system automatically assigns appropriate images based on product categories. See `docs/IMAGE_HANDLING.md` for detailed information about the image handling system.
 
 ## Development Tools
 - Node.js/Express for the backend
@@ -66,7 +72,8 @@ The database schema includes comprehensive indexing for optimal query performanc
 2. Install dependencies: `npm install`
 3. Set up environment variables (copy from `env.example`)
 4. Run database migrations: `npx prisma migrate dev`
-5. Start the server: `npm start`
+5. Setup product images: `node scripts/migration/update-product-images.js`
+6. Start the server: `npm start`
 
 ## Testing
 - Run tests: `npm test`

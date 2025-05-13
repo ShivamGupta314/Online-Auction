@@ -20,6 +20,7 @@ import { authService } from '@/services/auth';
 import { toast } from 'sonner';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import { useEffect } from 'react';
+import { getImageUrl } from '@/lib/imageUtils';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function DashboardPage() {
       title: 'Vintage Rolex Watch',
       currentBid: '$1,200',
       timeLeft: '2h 30m',
-      image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      image: getImageUrl('https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'),
       category: 'Luxury',
       bids: 12
     },
@@ -87,7 +88,7 @@ export default function DashboardPage() {
       title: 'Antique Persian Rug',
       currentBid: '$850',
       timeLeft: '4h 15m',
-      image: 'https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      image: getImageUrl('https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'),
       category: 'Antiques',
       bids: 8
     },
@@ -96,7 +97,7 @@ export default function DashboardPage() {
       title: 'Limited Edition Sneakers',
       currentBid: '$320',
       timeLeft: '1h 45m',
-      image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      image: getImageUrl('https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'),
       category: 'Fashion',
       bids: 15
     },

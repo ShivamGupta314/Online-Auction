@@ -12,7 +12,10 @@
     "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --setupFilesAfterEnv=./tests/setup.js",
     "test-sequential": "node run-tests.js",
     "prisma-migrate": "npx prisma migrate dev",
-    "check-env": "node scripts/checkEnv.js"
+    "check-env": "node scripts/checkEnv.js",
+    "update-images": "node scripts/migration/update-product-images.js",
+    "create-images": "node scripts/create-placeholder-images.js",
+    "manage-auctions": "node scripts/auction-manager.js"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",

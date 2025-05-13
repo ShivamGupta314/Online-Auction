@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { getImageUrl } from '@/lib/imageUtils';
 
 export default function AuctionsPage() {
   const router = useRouter();
@@ -256,7 +257,7 @@ export default function AuctionsPage() {
               <Card key={auction.id} className="bg-white hover:shadow-lg transition-shadow overflow-hidden">
                 <div className="relative h-48 w-full">
                   <img
-                    src={auction.image}
+                    src={getImageUrl(auction.image)}
                     alt={auction.title}
                     className="object-cover w-full h-full"
                   />
