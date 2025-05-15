@@ -51,6 +51,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // First register the user
       await authService.register({
         username: formData.username,
         name: formData.name,
@@ -60,7 +61,16 @@ export default function RegisterPage() {
       });
       
       toast.success('Registration successful! 5 free credits have been added to your account.');
-      router.push('/login');
+      
+      // Then login automatically
+      const loginResponse = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      // Navigate to the appropriate dashboard
+      const dashboardPath = formData.role === 'SELLER' ? '/dashboard/seller' : '/dashboard';
+      window.location.href = dashboardPath;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Registration failed. Please try again.');
     } finally {

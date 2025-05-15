@@ -5,7 +5,9 @@ import {
   getBidsForProduct,
   getHighestBid,
   getBidSummary,
-  getPublicBidHighlight
+  getPublicBidHighlight,
+  getBidsByProductId,
+  getUserActiveBids
 } from '../controllers/bid.controller.js'
 
 import authMiddleware from '../middleware/auth.middleware.js'
@@ -44,5 +46,11 @@ router.get(
 router.get('/product/:id', getBidsForProduct)
 router.get('/product/:id/highest', getHighestBid)
 router.get('/product/:id/highlight-bid', getPublicBidHighlight)
+
+// 2. GET /api/bids/products/:id - Get bids for a product
+router.get('/products/:id', authMiddleware, getBidsByProductId)
+
+// 3. GET /api/bids/user - Get user's active bids for dashboard
+router.get('/user', authMiddleware, getUserActiveBids)
 
 export default router

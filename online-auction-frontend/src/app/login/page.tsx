@@ -32,12 +32,12 @@ export default function LoginPage() {
 
       toast.success('Login successful!');
       
-      // Redirect based on user role
-      if (authService.isSeller()) {
-        router.push('/dashboard/seller');
-      } else {
-        router.push('/dashboard');
-      }
+      // Force a hard navigation to ensure the redirect works
+      const role = authService.getUserRole();
+      const dashboardPath = role === 'SELLER' ? '/dashboard/seller' : '/dashboard';
+      
+      // Use window.location for a full page navigation instead of router.push
+      window.location.href = dashboardPath;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Login failed. Please check your credentials.');
     } finally {

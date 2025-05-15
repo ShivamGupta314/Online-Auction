@@ -17,6 +17,8 @@ model User {
   paymentMethods PaymentMethod[]
   products       Product[]
   packages       UserPackage[]
+  Notification   Notification[]
+  WatchlistItems Watchlist[]
 
   @@index([role])
   @@index([email])
@@ -40,6 +42,7 @@ model Product {
   bids            Bid[]
   category        Category        @relation(fields: [categoryId], references: [id])
   seller          User            @relation(fields: [sellerId], references: [id])
+  watchedBy       Watchlist[]
 
   @@index([sellerId])
   @@index([categoryId])
@@ -215,6 +218,34 @@ model NewsletterSubscription {
   @@index([email, active])
 }
 
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  type      NotificationType
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  metaData  Json?
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@index([type])
+  @@index([userId, read])
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
 enum Role {
   ADMIN
   SELLER
@@ -234,21 +265,32 @@ enum TransactionStatus {
   COMPLETED
   FAILED
   REFUNDED
+  CANCELLED
 }
 
 enum TransactionType {
-  PACKAGE_PURCHASE
-  AUCTION_PAYMENT
+  PAYMENT
   REFUND
-  ESCROW_RELEASE
-  PLATFORM_FEE
+  CHARGE
+  SUBSCRIPTION
+  AUCTION_PAYMENT
 }
 
 enum AuctionPaymentStatus {
   PENDING
-  PAID
-  RELEASED_TO_SELLER
+  COMPLETED
+  FAILED
   REFUNDED
-  DISPUTED
   CANCELLED
+  RELEASED_TO_SELLER
+}
+
+enum NotificationType {
+  BID_PLACED
+  OUTBID
+  AUCTION_WON
+  AUCTION_ENDED
+  PAYMENT_RECEIVED
+  ITEM_SHIPPED
+  GENERAL
 }

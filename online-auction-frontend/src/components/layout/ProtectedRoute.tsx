@@ -7,51 +7,51 @@ import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'BIDDER' | 'SELLER' | 'ADMIN';
+  requiredRole?: string;
 }
 
-export default function ProtectedRoute({ 
-  children, 
-  requiredRole 
-}: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const isAuthenticated = authService.isAuthenticated();
-    
-    if (!isAuthenticated) {
-      toast.error('Please login to access this page');
-      router.push('/login');
-      return;
-    }
-
-    // If role is required, check if user has the required role
-    if (requiredRole) {
-      const userRole = authService.getUserRole();
+    // Check authentication on component mount
+    const checkAuth = () => {
+      console.log("Protected route - checking auth...");
+      console.log("Is authenticated:", authService.isAuthenticated());
+      console.log("User role:", authService.getUserRole());
+      console.log("Required role:", requiredRole);
       
-      if (userRole !== requiredRole) {
-        toast.error(`You need ${requiredRole} permissions to access this page`);
+      const isAuthenticated = authService.isAuthenticated();
+      
+      if (!isAuthenticated) {
+        console.log("Not authenticated, redirecting to login...");
+        toast.error('Please log in to access this page');
         router.push('/login');
-        return;
+        return false;
       }
-    }
+      
+      // Check role if required
+      if (requiredRole && authService.getUserRole() !== requiredRole) {
+        console.log("Wrong role, redirecting to dashboard...");
+        toast.error(`You need ${requiredRole} role to access this page`);
+        router.push('/dashboard');
+        return false;
+      }
+      
+      return true;
+    };
 
-    setIsAuthorized(true);
+    const authorized = checkAuth();
+    setIsAuthorized(authorized);
     setIsLoading(false);
   }, [router, requiredRole]);
 
-  // Show loading state while checking authentication
+  // Show loading or children based on authorization state
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
-  // Render children only if user is authorized
   return isAuthorized ? <>{children}</> : null;
 } 

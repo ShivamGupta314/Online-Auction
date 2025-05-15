@@ -49,18 +49,33 @@ if (process.env.ENABLE_REDIS === 'true') {
 
 // Enable CORS + JSON
 app.use(cors({
-  origin: '*', // Allow all origins for testing
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'], // Allow frontend domains
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }))
-// Add security headers
-app.use(helmet())
+
+// Add security headers but disable contentSecurityPolicy for local development
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}))
 
 // Add compression
 app.use(compression())
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(rootDir, 'uploads')));
+// Serve static files from uploads directory with CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.set({
+    'Cross-Origin-Resource-Policy': 'cross-origin',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+    'Cross-Origin-Embedder-Policy': 'unsafe-none'
+  });
+  next();
+}, express.static(path.join(rootDir, 'uploads')));
 logger.info(`Static files from ${path.join(rootDir, 'uploads')} will be served at /uploads`);
 
 // Rate limiting

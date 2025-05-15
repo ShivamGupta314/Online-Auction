@@ -380,3 +380,111 @@ export const getMyBids = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch your bids' })
   }
 }
+
+export const getUserActiveBids = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all active bids for the user (on auctions that haven't ended)
+    const activeBids = await prisma.bid.findMany({
+      where: {
+        bidderId: userId,
+        product: {
+          endTime: {
+            gt: new Date()
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        product: {
+          include: {
+            category: true,
+            bids: {
+              orderBy: {
+                price: 'desc'
+              },
+              take: 1
+            }
+          }
+        }
+      }
+    });
+
+    // Format the response
+    const formattedBids = activeBids.map(bid => {
+      const product = bid.product;
+      const highestBid = product.bids.length > 0 ? product.bids[0] : null;
+      const isHighestBidder = highestBid && highestBid.bidderId === userId;
+      
+      // Calculate time left
+      const now = new Date();
+      const endTime = new Date(product.endTime);
+      const timeLeftMs = Math.max(0, endTime - now);
+      
+      // Format time left
+      let timeLeft = '';
+      if (timeLeftMs <= 0) {
+        timeLeft = 'Ended';
+      } else {
+        const days = Math.floor(timeLeftMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeftMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        timeLeft = days > 0 ? `${days}d ${hours}h` : `${hours}h ${Math.floor((timeLeftMs % (1000 * 60 * 60)) / (1000 * 60))}m`;
+      }
+
+      return {
+        id: bid.id,
+        productId: product.id,
+        bidAmount: bid.price,
+        productName: product.name,
+        productImage: product.photoUrl,
+        timeLeft: timeLeft,
+        endTime: product.endTime,
+        isHighestBidder: isHighestBidder,
+        highestBid: highestBid ? highestBid.price : product.minBidPrice,
+        category: product.category ? product.category.name : null,
+        createdAt: bid.createdAt
+      };
+    });
+
+    res.json(formattedBids);
+  } catch (error) {
+    console.error('[GET] /api/bids/user', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getBidsByProductId = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    
+    // Validate productId
+    if (!productId) {
+      return res.status(400).json({ message: 'Product ID is required' });
+    }
+
+    // Get all bids for the product
+    const bids = await prisma.bid.findMany({
+      where: {
+        productId: parseInt(productId)
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        bidder: {
+          select: {
+            username: true
+          }
+        }
+      }
+    });
+
+    res.json(bids);
+  } catch (error) {
+    console.error('[GET] /api/bids/products/:id', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

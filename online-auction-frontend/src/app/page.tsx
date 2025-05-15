@@ -44,6 +44,7 @@ const HomePage = () => {
   const [upcomingAuctions, setUpcomingAuctions] = useState<Auction[]>([]);
   const [closedAuctions, setClosedAuctions] = useState<Auction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [testResult, setTestResult] = useState<string>('');
 
   // Set mounted state to true when component mounts
   useEffect(() => {
@@ -66,7 +67,7 @@ const HomePage = () => {
       try {
         // Fetch live auctions
         const live = await apiService.getLiveAuctions();
-        setLiveAuctions(live.slice(0, 6)); // Limit to 6 auctions for display
+        setLiveAuctions(live); // Store all live auctions, not just the first 6
         
         // Fetch upcoming auctions
         const upcoming = await apiService.getUpcomingAuctions();
@@ -142,7 +143,8 @@ const HomePage = () => {
     
     // Wait for the DOM to update before scrolling
     setTimeout(() => {
-      if (additionalAuctionsRef.current) {
+      // If there are more than 3 auctions, scroll to the 4th auction
+      if (liveAuctions.length > 3 && additionalAuctionsRef.current) {
         additionalAuctionsRef.current.scrollIntoView({ 
           behavior: 'smooth',
           block: 'start'
@@ -235,11 +237,8 @@ const HomePage = () => {
 
   // Combine auctions based on whether to show all
   const displayedAuctions = showAllAuctions 
-    ? [...displayedLiveAuctions, ...displayedLiveAuctions.slice(0, 3).map(auction => ({
-        ...auction,
-        id: `${auction.id}-duplicate` // Add a unique suffix to avoid duplicate keys
-      }))]
-    : displayedLiveAuctions.slice(0, 3); // Show only 3 auctions initially
+    ? formatAuctionsForDisplay(liveAuctions) // Show all auctions from API
+    : formatAuctionsForDisplay(liveAuctions.slice(0, 3)); // Show only 3 auctions initially
 
   // Don't render anything until client-side hydration is complete
   if (!isMounted) {
@@ -266,6 +265,53 @@ const HomePage = () => {
       toast.error('Failed to subscribe to newsletter');
     } finally {
       setIsSubscribing(false);
+    }
+  };
+
+  const testApi = async () => {
+    setIsLoading(true);
+    setTestResult('Testing...');
+    
+    try {
+      // Test public endpoint first
+      const response1 = await fetch('http://localhost:5001/api/health', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result1 = await response1.json();
+      console.log('Health check:', result1);
+      
+      // Then test with auth token
+      const token = localStorage.getItem('token');
+      console.log('Using token:', token ? `${token.substring(0, 15)}...` : 'No token');
+      
+      const response2 = await fetch('http://localhost:5001/api/users/stats', {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+      
+      // Try to get response text instead of assuming JSON
+      const text = await response2.text();
+      console.log('Raw response:', text);
+      
+      let result2;
+      try {
+        result2 = JSON.parse(text);
+        console.log('User stats:', result2);
+      } catch (e) {
+        result2 = { error: 'Invalid JSON', text };
+      }
+      
+      setTestResult(JSON.stringify({ health: result1, stats: result2 }, null, 2));
+    } catch (error) {
+      console.error('Test failed:', error);
+      setTestResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -434,7 +480,7 @@ const HomePage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ 
                     duration: 0.3, 
-                    delay: index >= 3 ? 0.1 : index * 0.05
+                    delay: index < 3 ? index * 0.05 : 0.1
                   }}
                   className={index >= 3 ? "scroll-mt-32" : ""}
                   ref={index === 3 ? additionalAuctionsRef : null}
@@ -798,10 +844,10 @@ const HomePage = () => {
           
           <div className="mt-12 flex justify-center">
             <div className="flex items-center space-x-4">
-              <img src="https://cdn.pixabay.com/photo/2018/05/08/21/29/paypal-3384015_1280.png" alt="PayPal" className="h-8 opacity-70" />
-              <img src="https://cdn.pixabay.com/photo/2021/12/06/13/48/visa-6850402_1280.png" alt="Visa" className="h-8 opacity-70" />
-              <img src="https://cdn.pixabay.com/photo/2021/12/06/13/45/mastercard-6850363_1280.png" alt="Mastercard" className="h-8 opacity-70" />
-              <img src="https://cdn.pixabay.com/photo/2022/01/17/14/39/payment-6945310_1280.png" alt="American Express" className="h-8 opacity-70" />
+              <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/paypal.svg" alt="PayPal" className="h-8 opacity-70" />
+              <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/visa.svg" alt="Visa" className="h-8 opacity-70" />
+              <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/mastercard.svg" alt="Mastercard" className="h-8 opacity-70" />
+              <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/americanexpress.svg" alt="American Express" className="h-8 opacity-70" />
             </div>
           </div>
         </div>
@@ -879,6 +925,23 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Test API Connection */}
+      <div className="container mx-auto my-8 p-4">
+        <button 
+          onClick={testApi} 
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Testing API...' : 'Test API Connection'}
+        </button>
+        
+        {testResult && (
+          <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96 text-sm">
+            {testResult}
+          </pre>
+        )}
+      </div>
     </div>
   );
 };

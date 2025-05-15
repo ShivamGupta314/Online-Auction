@@ -226,6 +226,70 @@ async function getBidIdForProduct(productId) {
   return bid?.id
 }
 
+// Add this function at the end of the file, before any module.exports
+async function addNewProduct() {
+  console.log('Adding new test product with next year end time...');
+  
+  // Get the current date
+  const now = new Date();
+  
+  // Create end date for next year
+  const nextYear = new Date();
+  nextYear.setFullYear(now.getFullYear() + 1);
+  
+  try {
+    // First, check if we have at least one seller user
+    const seller = await prisma.user.findFirst({
+      where: { role: 'SELLER' }
+    });
+    
+    if (!seller) {
+      console.log('No seller found. Create a seller first.');
+      return;
+    }
+    
+    // Check if we have at least one category
+    const category = await prisma.category.findFirst();
+    
+    if (!category) {
+      console.log('No category found. Create a category first.');
+      return;
+    }
+    
+    // Create a new product with next year end time
+    const product = await prisma.product.create({
+      data: {
+        name: "New MacBook Pro 16 (Live Auction)",
+        description: "Brand new MacBook Pro with M3 chip, 16-inch display, 32GB RAM and 1TB SSD",
+        photoUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=2126&auto=format&fit=crop&ixlib=rb-4.0.3",
+        minBidPrice: 149000,
+        startTime: now,
+        endTime: nextYear,
+        sellerId: seller.id,
+        categoryId: category.id
+      }
+    });
+    
+    console.log('Added new product:', product);
+  } catch (error) {
+    console.error('Error adding product:', error);
+  }
+}
+
+// If this script is run directly (not imported as a module)
+if (require.main === module) {
+  // Call the function to add a new product
+  addNewProduct()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+      console.error(e);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}
+
 main()
   .catch((e) => {
     console.error(e)
