@@ -64,34 +64,22 @@ export interface Auction {
   id: string;
   name: string;
   description: string;
-  photoUrl: string;
-  minBidPrice: number;
-  startTime: string;
+  startPrice: number;
+  currentPrice: number;
   endTime: string;
-  categoryId: number;
-  sellerId: string;
-  createdAt: string;
-  updatedAt: string;
-  highestBid?: number;
-  isExpired?: boolean;
-  timeLeft?: number;
-  timeLeftFormatted?: string;
+  photoUrl: string;
   category?: {
-    id: number;
+    id: string;
     name: string;
   };
+  bids?: any[];
   seller?: {
     id: string;
-    username: string;
+    name: string;
   };
-  bids?: Array<{
-    id: string;
-    price: number;
-    createdAt: string;
-    bidder: {
-      username: string;
-    };
-  }>;
+  status?: 'active' | 'upcoming' | 'closed';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NewsletterSubscription {
@@ -127,6 +115,14 @@ export interface WatchlistItem {
   timeLeft: string;
   endTime: string;
   image: string;
+}
+
+export interface Bid {
+  id: string;
+  amount: number;
+  timestamp: string;
+  status: 'active' | 'outbid' | 'won' | 'lost';
+  auction: Auction;
 }
 
 export const apiService = {
@@ -348,6 +344,17 @@ export const apiService = {
     } catch (error) {
       console.error('Health check failed:', error);
       return false;
+    }
+  },
+
+  async getUserBids(): Promise<Bid[]> {
+    try {
+      const response = await api.get('/bids/user');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user bids:', error);
+      // Return empty array instead of throwing error to prevent UI from breaking
+      return [];
     }
   }
 }; 
