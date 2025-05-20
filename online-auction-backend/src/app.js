@@ -114,6 +114,22 @@ app.use((req, res, next) => {
   next()
 })
 
+// API ROUTES INDEX
+// =================
+// 1. Public Authentication Routes:     /api/auth
+// 2. User-specific Routes:             /api/users
+// 3. Product/Auction Routes:           /api/products
+// 4. Bidding Routes:                   /api/bids
+// 5. Category Routes:                  /api/categories
+// 6. Seller-specific Routes:           /api/seller
+// 7. Package/Subscription Routes:      /api/packages
+// 8. Payment Routes:                   /api/payments
+// 9. Admin Routes:                     /api/admin
+// 10. Notification Routes:             /api/notifications
+// 11. Webhook Routes:                  /api/webhooks
+// 12. Real-time Routes:                /api/realtime
+// 13. Health Check Routes:             /api/health
+
 // 🆓 Public routes
 app.use('/api/auth', authLimiter, authRoutes)
 

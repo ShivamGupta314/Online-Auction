@@ -1,7 +1,38 @@
 import { toast } from 'sonner';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // Backend API URL - use consistent port with socket service
-const API_URL = 'http://localhost:5001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add request interceptor to add auth token
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = localStorage.getItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Helper function to handle API responses
 const handleResponse = async (response: Response) => {
@@ -67,15 +98,50 @@ export interface NewsletterSubscription {
   email: string;
 }
 
+export interface UserStats {
+  activeAuctions: number;
+  activeBids: number;
+  wonAuctions: number;
+  totalSpent: number;
+  change: {
+    activeAuctions: string;
+    activeBids: string;
+    wonAuctions: string;
+    totalSpent: string;
+  }
+}
+
+export interface ActivityItem {
+  id: string;
+  action: string;
+  item: string;
+  time: string;
+  amount: string;
+  auctionId: string;
+}
+
+export interface WatchlistItem {
+  id: string;
+  title: string;
+  currentBid: number;
+  timeLeft: string;
+  endTime: string;
+  image: string;
+}
+
 export const apiService = {
   // Get live auctions for landing page
   async getLiveAuctions(): Promise<Auction[]> {
     try {
-      const response = await fetch(`${API_URL}/products?status=active`, {
-        headers: getAuthHeaders(),
+      const response = await api.get('/products', {
+        params: {
+          status: 'active',
+          sort: 'endTime',
+          order: 'asc'
+        }
       });
       
-      return handleResponse(response);
+      return response.data;
     } catch (error) {
       console.error('Error fetching live auctions:', error);
       toast.error('Failed to load live auctions');
@@ -174,41 +240,9 @@ export const apiService = {
   },
 
   // Get dashboard user statistics
-  async getUserStats(): Promise<{
-    activeAuctions: number;
-    activeBids: number;
-    wonAuctions: number;
-    totalSpent: number;
-    change: {
-      activeAuctions: string;
-      activeBids: string;
-      wonAuctions: string;
-      totalSpent: string;
-    }
-  }> {
-    try {
-      console.log('Making API call to:', `${API_URL}/users/stats`);
-      const response = await fetch(`${API_URL}/users/stats`, {
-        headers: getAuthHeaders(),
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      // Return default values if API fails
-      return {
-        activeAuctions: 24,
-        activeBids: 8,
-        wonAuctions: 3,
-        totalSpent: 85000,
-        change: {
-          activeAuctions: '+12%',
-          activeBids: '+3%',
-          wonAuctions: '+1%',
-          totalSpent: '+5%'
-        }
-      };
-    }
+  async getUserStats(): Promise<UserStats> {
+    const response = await api.get('/users/stats');
+    return response.data;
   },
 
   // Get user's active bids
@@ -254,53 +288,66 @@ export const apiService = {
   },
 
   // Get user's recent activity
-  async getUserActivity(): Promise<any[]> {
-    try {
-      const response = await fetch(`${API_URL}/users/activity`, {
-        headers: getAuthHeaders(),
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching user activity:', error);
-      return [];
-    }
+  async getUserActivity(): Promise<ActivityItem[]> {
+    const response = await api.get('/users/activity');
+    return response.data;
   },
 
   // Add auction to watchlist
-  async addToWatchlist(auctionId: string): Promise<{ success: boolean }> {
-    try {
-      const response = await fetch(`${API_URL}/users/watchlist`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ auctionId }),
-      });
-      
-      await handleResponse(response);
-      toast.success('Added to watchlist');
-      return { success: true };
-    } catch (error) {
-      console.error('Error adding to watchlist:', error);
-      toast.error('Failed to add to watchlist');
-      return { success: false };
-    }
+  async addToWatchlist(auctionId: string): Promise<void> {
+    await api.post('/users/watchlist', { auctionId });
   },
 
   // Remove auction from watchlist
-  async removeFromWatchlist(auctionId: string): Promise<{ success: boolean }> {
+  async removeFromWatchlist(auctionId: string): Promise<void> {
+    await api.delete(`/users/watchlist/${auctionId}`);
+  },
+
+  // Get watchlist
+  async getWatchlist(): Promise<WatchlistItem[]> {
+    const response = await api.get('/users/watchlist');
+    return response.data;
+  },
+
+  // Place bid
+  async placeBid(auctionId: string, amount: number): Promise<void> {
+    await api.post('/bids', {
+      productId: auctionId,
+      price: amount
+    });
+  },
+
+  // Get my bids
+  async getMyBids(): Promise<Auction[]> {
+    const response = await api.get('/bids/user');
+    return response.data;
+  },
+
+  // Get won auctions
+  async getWonAuctions(): Promise<Auction[]> {
+    const response = await api.get('/users/won-auctions');
+    return response.data;
+  },
+
+  // Get notifications
+  async getNotifications(): Promise<any[]> {
+    const response = await api.get('/notifications');
+    return response.data;
+  },
+
+  // Mark notification as read
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await api.put(`/notifications/${notificationId}/read`);
+  },
+
+  // Health check
+  async checkHealth(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_URL}/users/watchlist/${auctionId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-      
-      await handleResponse(response);
-      toast.success('Removed from watchlist');
-      return { success: true };
+      const response = await api.get('/health');
+      return response.status === 200;
     } catch (error) {
-      console.error('Error removing from watchlist:', error);
-      toast.error('Failed to remove from watchlist');
-      return { success: false };
+      console.error('Health check failed:', error);
+      return false;
     }
   }
 }; 

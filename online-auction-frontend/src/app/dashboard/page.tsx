@@ -17,7 +17,9 @@ import {
   Wallet,
   Bell,
   Search,
-  Loader2
+  Loader2,
+  Menu,
+  X
 } from 'lucide-react';
 import { authService } from '@/services/auth';
 import { apiService, Auction } from '@/services/api';
@@ -25,11 +27,14 @@ import { toast } from 'sonner';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import { useEffect, useState } from 'react';
 import { getImageUrl } from '@/lib/imageUtils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 // Animation variants
 const fadeIn = {
@@ -76,6 +81,19 @@ interface UserStats {
   }
 }
 
+// Add these new color constants
+const sidebarColors = {
+  background: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
+  hover: 'hover:bg-white/10',
+  active: 'bg-white/15',
+  border: 'border-slate-700/50',
+  text: {
+    primary: 'text-white',
+    secondary: 'text-slate-400',
+    hover: 'hover:text-white'
+  }
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
@@ -89,6 +107,18 @@ export default function DashboardPage() {
   const [isLoadingActivity, setIsLoadingActivity] = useState(true);
   const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // Sidebar animation variants
+  const sidebarVariants = {
+    open: { x: 0, opacity: 1 },
+    closed: { x: '-100%', opacity: 0 }
+  };
+
+  // Card animation variants
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -218,11 +248,10 @@ export default function DashboardPage() {
 
   const handleRemoveFromWatchlist = async (itemId: string) => {
     try {
-      const result = await apiService.removeFromWatchlist(itemId);
-      if (result.success) {
-        // Update watchlist state after removal
-        setWatchlist(watchlist.filter(item => item.id !== itemId));
-      }
+      await apiService.removeFromWatchlist(itemId);
+      // Update watchlist state after removal
+      setWatchlist(watchlist.filter(item => item.id !== itemId));
+      toast.success('Item removed from watchlist');
     } catch (error) {
       console.error('Error removing from watchlist:', error);
       toast.error('Failed to remove from watchlist');
@@ -241,176 +270,146 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute requiredRole="BIDDER">
-      <div className="flex min-h-screen bg-[#fafafa]">
-        {/* Sidebar */}
-        <aside className="hidden md:block w-64 bg-white border-r shadow-sm">
-          <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold text-blue-600">AuctionHub</h2>
-            <p className="text-sm text-gray-500 mt-1">Welcome back, {user?.username || 'Bidder'}</p>
-          </div>
-          
-          <div className="pt-4 pb-2 px-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <Avatar>
-                <AvatarImage src={user?.profileImage || ''} alt={user?.username || 'User'} />
-                <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'UB'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500">Bidder Account</p>
+      <div className="min-h-screen bg-[#fafafa]">
+        {/* Header */}
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white w-full"
+        >
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between">
+              {/* Left side - Hamburger and Title */}
+              <div className="flex items-center space-x-4">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+                    >
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 w-72 bg-gradient-to-b from-blue-600 to-indigo-700 text-white border-0">
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <SidebarContent user={user} onLogout={handleLogout} />
+                  </SheetContent>
+                </Sheet>
+                <div>
+                  <h1 className="text-2xl font-bold">Your Bidding Dashboard</h1>
+                  <p className="text-blue-100 text-sm">Track your auctions, bids, and winning items</p>
+                </div>
+              </div>
+              
+              {/* Right side - Logo and User Profile */}
+              <div className="flex items-center space-x-4">
+                {/* Logo */}
+                <div className="flex items-center space-x-2">
+                  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">A</span>
+                  </div>
+                  <span className="text-xl font-bold text-white">AuctionHub</span>
+                </div>
+
+                {/* User Profile */}
+                <div className="flex items-center space-x-3 ml-4">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-white hover:bg-white/10"
+                    onClick={() => router.push('/notifications')}
+                  >
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                  <div className="flex items-center space-x-3">
+                    <Avatar>
+                      <AvatarImage src={user?.profileImage || ''} alt={user?.username || 'User'} />
+                      <AvatarFallback className="bg-white/10 text-white">
+                        {user?.username?.substring(0, 2).toUpperCase() || 'UB'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
+                      <p className="text-xs text-blue-100">Bidder Account</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          
-          <nav className="space-y-1 px-3">
-            {[
-              { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard', active: true },
-              { icon: <Gavel className="h-5 w-5" />, label: 'Browse Auctions', href: '/auctions' },
-              { icon: <Wallet className="h-5 w-5" />, label: 'My Bids', href: '/bids' },
-              { icon: <Package className="h-5 w-5" />, label: 'Won Items', href: '/won' },
-              { icon: <Bell className="h-5 w-5" />, label: 'Notifications', href: '/notifications' },
-              { icon: <User className="h-5 w-5" />, label: 'Profile', href: '/profile' },
-              { icon: <Settings className="h-5 w-5" />, label: 'Settings', href: '/settings' },
-            ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => router.push(item.href)}
-                className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg transition-colors ${
-                  item.active 
-                    ? 'bg-blue-50 text-blue-600 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-                {item.label === 'Notifications' && (
-                  <Badge className="ml-auto bg-red-500 text-white">3</Badge>
-                )}
-              </button>
-            ))}
-          </nav>
-          
-          <div className="p-4 border-t mt-auto">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={handleLogout}
-            >
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </Button>
-          </div>
-        </aside>
+        </motion.header>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          {/* Header */}
-          <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-            <div className="container px-4 sm:px-6 py-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold">Your Bidding Dashboard</h1>
-                  <p className="text-blue-100 mt-1">Track your auctions, bids, and winning items</p>
-                </div>
-                
-                <div className="flex space-x-3">
-                  <Button onClick={() => router.push('/auctions')} variant="secondary" className="bg-white/10 text-white hover:bg-white/20 border-0">
-                    <Search className="h-4 w-4 mr-2" />
-                    Browse Auctions
-                  </Button>
-                  <Button onClick={() => router.push('/profile')} className="bg-white text-blue-600 hover:bg-blue-50 border-0">
-                    <User className="h-4 w-4 mr-2" />
-                    My Profile
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="container px-4 sm:px-6 py-8">
-            {/* Stats Grid */}
-            <motion.div 
-              initial="hidden"
-              animate="visible"
-              variants={fadeIn}
-              transition={{ staggerChildren: 0.1, delayChildren: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-            >
-              {isLoadingStats ? (
-                // Loading skeleton for stats
-                Array(4).fill(0).map((_, index) => (
-                  <motion.div key={index} variants={fadeIn}>
-                    <Card className="bg-white shadow-sm hover:shadow-md transition-shadow border-0">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-4 w-4 rounded-full" />
+        <main className="w-full">
+          {/* Stats Cards */}
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { 
+                  title: 'Active Auctions', 
+                  value: userStats?.activeAuctions || 0, 
+                  change: userStats?.change.activeAuctions || '+0%', 
+                  description: 'From last month',
+                  icon: <Gavel className="h-4 w-4 text-blue-500" />
+                },
+                { 
+                  title: 'My Active Bids', 
+                  value: userStats?.activeBids || 0, 
+                  change: userStats?.change.activeBids || '+0%', 
+                  description: 'From last month',
+                  icon: <TrendingUp className="h-4 w-4 text-green-500" />
+                },
+                { 
+                  title: 'Won Auctions', 
+                  value: userStats?.wonAuctions || 0, 
+                  change: userStats?.change.wonAuctions || '+0%', 
+                  description: 'From last month',
+                  icon: <Package className="h-4 w-4 text-purple-500" />
+                },
+                { 
+                  title: 'Total Spent', 
+                  value: formatCurrency(userStats?.totalSpent || 0), 
+                  change: userStats?.change.totalSpent || '+0%', 
+                  description: 'From last month',
+                  icon: <DollarSign className="h-4 w-4 text-yellow-500" />
+                },
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.title}
+                  initial="hidden"
+                  animate="visible"
+                  variants={cardVariants}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <Card className="bg-white shadow-sm border-0">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+                          <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
+                          <p className="text-sm text-gray-500 mt-1">{stat.description}</p>
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-8 w-16 mb-2" />
-                        <Skeleton className="h-4 w-32" />
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))
-              ) : (
-                // Actual stats data
-                [
-                  { 
-                    title: 'Active Auctions', 
-                    value: userStats?.activeAuctions || 0, 
-                    change: userStats?.change.activeAuctions || '+0%', 
-                    description: 'From last month',
-                    icon: <Gavel className="h-4 w-4 text-blue-500" />
-                  },
-                  { 
-                    title: 'My Active Bids', 
-                    value: userStats?.activeBids || 0, 
-                    change: userStats?.change.activeBids || '+0%', 
-                    description: 'From last month',
-                    icon: <TrendingUp className="h-4 w-4 text-green-500" />
-                  },
-                  { 
-                    title: 'Won Auctions', 
-                    value: userStats?.wonAuctions || 0, 
-                    change: userStats?.change.wonAuctions || '+0%', 
-                    description: 'From last month',
-                    icon: <Package className="h-4 w-4 text-purple-500" />
-                  },
-                  { 
-                    title: 'Total Spent', 
-                    value: formatCurrency(userStats?.totalSpent || 0), 
-                    change: userStats?.change.totalSpent || '+0%', 
-                    description: 'From last month',
-                    icon: <DollarSign className="h-4 w-4 text-yellow-500" />
-                  },
-                ].map((stat, index) => (
-                  <motion.div key={index} variants={fadeIn}>
-                    <Card className="bg-white shadow-sm hover:shadow-md transition-shadow border-0">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm font-medium text-gray-500">
-                            {stat.title}
-                          </CardTitle>
+                        <div className="p-3 bg-gray-50 rounded-full">
                           {stat.icon}
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{stat.value}</div>
-                        <div className="flex items-center text-sm">
-                          <span className="text-green-600">{stat.change}</span>
-                          <span className="text-gray-500 ml-2">{stat.description}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))
-              )}
-            </motion.div>
+                      </div>
+                      <div className="mt-4 flex items-center">
+                        <span className={`text-sm font-medium ${
+                          stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {stat.change}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
 
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Tabs Section with styled tab list matching landing page */}
             <div className="mt-8">
               <Tabs defaultValue="auctions" className="space-y-6">
@@ -706,10 +705,93 @@ export default function DashboardPage() {
                 </TabsContent>
               </Tabs>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </ProtectedRoute>
+  );
+}
+
+// Update the SidebarContent component
+function SidebarContent({ user, onLogout }: { user: any; onLogout: () => void }) {
+  const router = useRouter();
+  const [activeItem, setActiveItem] = useState('Dashboard');
+
+  const menuItems = [
+    { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard' },
+    { icon: <Gavel className="h-5 w-5" />, label: 'My Bids', href: '/dashboard/bids' },
+    { icon: <Package className="h-5 w-5" />, label: 'Won Auctions', href: '/dashboard/won' },
+    { icon: <Bell className="h-5 w-5" />, label: 'Notifications', href: '/dashboard/notifications' },
+    { icon: <User className="h-5 w-5" />, label: 'Profile', href: '/profile' },
+    { icon: <Settings className="h-5 w-5" />, label: 'Settings', href: '/settings' },
+  ];
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-6 border-b border-white/10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center space-x-3"
+        >
+          <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+            <span className="text-2xl font-bold text-white">A</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">AuctionHub</h2>
+            <p className="text-sm text-white/70">Welcome back, {user?.username || 'Bidder'}</p>
+          </div>
+        </motion.div>
+      </div>
+      
+      <div className="pt-4 pb-2 px-4">
+        <nav className="space-y-1">
+          {menuItems.map((item, index) => (
+            <motion.button
+              key={item.label}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 * index }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setActiveItem(item.label);
+                router.push(item.href);
+              }}
+              className={cn(
+                "flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg transition-colors",
+                activeItem === item.label
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              )}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </motion.button>
+          ))}
+        </nav>
+      </div>
+
+      <div className="mt-auto p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white/70 hover:text-white hover:bg-white/10"
+            onClick={onLogout}
+          >
+            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </Button>
+        </motion.div>
+      </div>
+    </div>
   );
 } 
 
